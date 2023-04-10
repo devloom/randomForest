@@ -3,8 +3,8 @@ import sklearn
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dTree import Tree
-from loadData import loadData, dataNumpy
+from tree import Tree
+from dataset import Dataset
 
 
 ############# This is a custom built random forest #########################
@@ -35,8 +35,9 @@ class Forest():
 
 
 if __name__ == '__main__':
-    ############# load dataset ########## (this should actually be object of class Dataset; need to rewrite)
+    ############# load dataset ##########
     dataset = Dataset()
+
 
     '''
     X_train, y_train = loadData()
