@@ -8,28 +8,30 @@ from dataset import Dataset
 
 
 ############# This is a custom built random forest #########################
-############# we can compare functionality to random forest built from sklearn #############
+############# we can compare functionality to random forest from sklearn #############
 class Forest():
     def __init__(self):
         super().__init__()
         self.numTrees = 1
         self.trees = []*numTrees
+
         self.splittingFunction = 'gini'
         #self.createTrees()
 
 
     def createTrees(self, dataset):
         for i in range(numTrees):
-            tree = Tree()
-            tree.setSplittingFunction(self.splittingFunction)
-            tree.grow()
+            tree = Tree(dataset)
             self.trees[i] = tree
 
-    def classify():
-        for i in self.trees:
-            dec_path = [False]*i.depth
-            for j in range(i.depth):
-                dec_path[j] = i.node(i.nodes[j])
+    def classify(self,t):
+        node = t.nodes
+        while node.left:
+            if inputs[node.feature_index] < node.threshold:
+                node = node.left
+            else:
+                node = node.right
+        return node.predicted_class
 
 
 
@@ -37,23 +39,6 @@ class Forest():
 if __name__ == '__main__':
     ############# load dataset ##########
     dataset = Dataset()
-
-
-    '''
-    X_train, y_train = loadData()
-    length = 120
-    x_mean = np.zeros((length,3))
-    x_std = np.zeros((length,3))
-    y_label = np.zeros(length)
-    for i in range(length):
-        train_img = dataNumpy(X_train[i])
-        y_label[i] = y_train[i] 
-        y_pred = forest.classify(train_img)
-
-        x_mean[i] = np.mean(train_img, axis=(0))
-        #x_mean = np.mean(X_train, axis=(0,1))  # per-channel mean
-        x_std[i] = np.std(train_img, axis=(0))
-    '''
     #####################################
 
     ########### Create forest ############
@@ -63,8 +48,10 @@ if __name__ == '__main__':
     forest.createTrees(dataset)
     ###################################################
 
+    for i in range(forest.numTrees):
+        forest.classify(self.trees[i])
     ########## Classify test data #####################
-    y_pred = forest.classify(train_img)
+    #y_pred = forest.classify(train_img)
     ###################################################
         
     
