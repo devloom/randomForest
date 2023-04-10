@@ -4,24 +4,24 @@ class Tree():
 
         self.depth = 5
         self.splittingFunction = 'gini'
-        self.nodes = [()]
+        self.nodes = [[]]
         #self.createTrees()
 
 
     def setSplittingFunction(self,split):
         self.splittingFunction = split
 
-    def node(x,xVal):
-        if x < xVal:
+    def node(x_train,col,xVal):
+        if x_train[col] < xVal:
             return True
         else:
             return False
 
 
     def grow():
-        infoGain = 0
+        
         if (self.splittingFunction == 'gini'):
+            infoGain = 0
             #### find best first split
             for i in range(0,1,0.1):
-                if (self.node(x_mean[]) 
 

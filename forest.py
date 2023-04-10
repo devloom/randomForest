@@ -6,42 +6,69 @@ import matplotlib.pyplot as plt
 from dTree import Tree
 from loadData import loadData, dataNumpy
 
+
+############# This is a custom built random forest #########################
+############# we can compare functionality to random forest built from sklearn #############
 class Forest():
     def __init__(self):
         super().__init__()
         self.numTrees = 1
         self.trees = []*numTrees
         self.splittingFunction = 'gini'
-        self.createTrees()
+        #self.createTrees()
 
 
-    def createTrees(self):
+    def createTrees(self, dataset):
         for i in range(numTrees):
             tree = Tree()
             tree.setSplittingFunction(self.splittingFunction)
             tree.grow()
             self.trees[i] = tree
 
+    def classify():
+        for i in self.trees:
+            dec_path = [False]*i.depth
+            for j in range(i.depth):
+                dec_path[j] = i.node(i.nodes[j])
+
+
 
 
 if __name__ == '__main__':
+    ############# load dataset ########## (this should actually be object of class Dataset; need to rewrite)
+    dataset = Dataset()
+
+    '''
     X_train, y_train = loadData()
     length = 120
     x_mean = np.zeros((length,3))
     x_std = np.zeros((length,3))
     y_label = np.zeros(length)
-
-    #length = len(X_train)
-    
-
     for i in range(length):
         train_img = dataNumpy(X_train[i])
+        y_label[i] = y_train[i] 
+        y_pred = forest.classify(train_img)
+
         x_mean[i] = np.mean(train_img, axis=(0))
         #x_mean = np.mean(X_train, axis=(0,1))  # per-channel mean
         x_std[i] = np.std(train_img, axis=(0))
-        y_label[i] = y_train[i] 
+    '''
+    #####################################
 
+    ########### Create forest ############
     forest = Forest()
+    
+    ########### Grow trees on training data ###########
+    forest.createTrees(dataset)
+    ###################################################
+
+    ########## Classify test data #####################
+    y_pred = forest.classify(train_img)
+    ###################################################
+        
+    
+    
+    
 
     '''
     print(x_mean)
