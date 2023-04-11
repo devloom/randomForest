@@ -49,9 +49,13 @@ class Tree():
     
     
     def grow(self,X,y,depth=0):
+        y = np.array(y)
+        print(type(X[0]))
+        X = np.array(X,dtype='JpegImageFile')
         num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
         predicted_class = np.argmax(num_samples_per_class)
-        print(predicted_class)
+        #print(num_samples_per_class)
+        #print(predicted_class)
         node = Node(pred_class=predicted_class)
         if depth < self.max_depth:
             rowIdx, colIdx, rgbIdx, thr = self.splitter(X, y)
@@ -66,6 +70,8 @@ class Tree():
                     elif (colIdx < 0 and np.mean(img[rowIdx,:,rgbIdx]) < thr):
                         indices_left[i] = True
                         #indices_left = X[:, :, colIdx, rgbIdx] < thr
+                indices_left = np.array(indices_left)
+                
                 X_left, y_left = X[indices_left], y[indices_left]
                 X_right, y_right = X[~indices_left], y[~indices_left]
                 node.threshold = thr
@@ -77,4 +83,8 @@ class Tree():
 
 if __name__ == '__main__':
     dataset = Dataset()
+    #thr = 0.5
+    #X = np.array([[1, 2, 3],[4, 5, 6],[7, 8, 9]])/9
+    #print (X[:, 0] < thr)
+
     tree = Tree(dataset)
