@@ -50,6 +50,9 @@ if __name__ == '__main__':
 
     for i in range(forest.numTrees):
         forest.classify(self.trees[i])
+
+
+    print("hallo")
     ########## Classify test data #####################
     #y_pred = forest.classify(train_img)
     ###################################################
