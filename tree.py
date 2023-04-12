@@ -16,13 +16,14 @@ class Tree():
     def __init__(self,data):
         super().__init__()
 
-        self.max_depth = 3
+        self.max_depth = 6
         self.splittingFunction = 'gini'
         self.classes = np.array(list(set(data.train_y)))
 
         self.n_classes = len(self.classes)
         #self.n_classes = len(set(data.train_y))
         
+        print("Growing tree:")
         self.nodes = self.grow(data.train_x,data.train_y)
 
     '''
@@ -48,7 +49,7 @@ class Tree():
         num_parent = [np.sum(y == i) for i in self.classes]
         best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
         
-        print(best_gini)
+        #print(best_gini)
 
         ite = 0
         ###work in progress
@@ -85,7 +86,7 @@ class Tree():
                             best_rgb = rgb
                             best_thr = thr
         
-        print (best_gini, best_row,best_col,best_rgb,best_thr)
+        #print (best_gini, best_row,best_col,best_rgb,best_thr)
         return best_row, best_col, best_rgb, best_thr
 
     
@@ -94,7 +95,8 @@ class Tree():
         #num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
         num_samples_per_class = [np.sum(y == i) for i in self.classes]
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
-        print("predicted class: ", predicted_class)
+        print("Tree at depth ", depth)
+        #print("predicted class: ", predicted_class)
         node = Node(pred_class=predicted_class)
         if depth < self.max_depth:
             rowIdx, colIdx, rgbIdx, thr = self.splitter(X, y)
@@ -112,18 +114,21 @@ class Tree():
                 indices_left = X[:,rowIdx,colIdx,rgbIdx] < thr
                 X_left, y_left = X[indices_left], y[indices_left]
                 X_right, y_right = X[~indices_left], y[~indices_left]
+                node.row_index = rowIdx
+                node.col_index = colIdx
+                node.rgb_index = rgbIdx
                 node.threshold = thr
-                print("Splitting tree at level ", depth)
+                
                 node.left = self.grow(X_left, y_left, depth + 1)
                 node.right = self.grow(X_right, y_right, depth + 1)
         return node
 
-    def print_leaves(self,node,leaf):
+    def print_leaves(self,node):
         if node.left == None:  
-            print ("leaf: ", leaf,"predicted class: ", node.pred_class)
+            print ("predicted class: ", node.pred_class)
         else:
-            print_leaves(node.left,leaf-1)
-            print_leaves(node.right,leaf-2)
+            self.print_leaves(node.left)
+            self.print_leaves(node.right)
             
             
 
@@ -137,24 +142,28 @@ if __name__ == '__main__':
 
     tree = Tree(dataset)
     node_ = tree.nodes
-    tree.print_leaves(node_,2**(tree.max_depth-1))
+    #tree.print_leaves(node_,2**(tree.max_depth-1))
+    #tree.print_leaves(node_)
 
     pred_classes = np.zeros(len(dataset.train_x))
     print("here")
-    '''
-    #for i in range(len(dataset.train_x)):
-        #test_img = dataset.train_x[i]
-        
-        #while node_.left:
+    
+    for i in range(len(dataset.train_x)):
+    #for i in range(1950,2050,1):
+        #print(i)
+        node_ = tree.nodes
+        test_img = dataset.train_x[i]
+        while node_.left:
+            #print(node_.row_index,node_.col_index, node_.rgb_index,node_.threshold)
+            if test_img[node_.row_index,node_.col_index, node_.rgb_index] < node_.threshold:
+                node_ = node_.left
+            else:
+                node_ = node_.right
+        pred_classes[i] = node_.pred_class
 
-            #if test_img[node_.row_index,node_.col_index, node_.rgb_index] < node_.threshold:
-            #    node_ = node_.left
-            #else:
-            #    node_ = node_.right
-        #pred_classes[i] = node_.pred_class
-
-    print(dataset.train_y)
-    print(pred_classes)
+    print(dataset.train_y[0:100])
+    print(pred_classes[0:100])
+    
     num = np.sum([1 if dataset.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
-    '''
+    
