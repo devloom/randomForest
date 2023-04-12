@@ -11,16 +11,23 @@ import itertools
 class Dataset:
 	def __init__(self, pth = "Bingsu/Cat_and_Dog"):
 		self.dataset_path = pth
-		self.ds = load_dataset(self.dataset_path, name="full",split="train[2000:6000]")
+		#self.ds = load_dataset(self.dataset_path, name="full",split="train[2000:6000]")
 		#dataset = load_dataset("parquet", data_files={'train': 'train.parquet', 'test': 'test.parquet'})
 
 		#self.train_dataset = self.ds['train']
-		self.train_dataset = self.ds
+		#self.train_dataset = self.ds
+		self.train_dataset = load_dataset(self.dataset_path, name="full",split="train[2000:6000]")
+		self.test_dataset = load_dataset(self.dataset_path, name="full",split="test[:2000]")
 		#self.train_x = self.train_dataset['image']
 		self.pixels = 56
+
 		self.train_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.train_dataset["image"]]
 		self.train_x = np.array([self.imgNumpy(image) for image in self.train_img])
 		self.train_y = np.array(self.train_dataset['labels'])
+
+		self.test_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.test_dataset["image"]]
+		self.test_x = np.array([self.imgNumpy(image) for image in self.test_img])
+		self.test_y = np.array(self.test_dataset['labels'])
 
 	def imgNumpy(self,img):
 		img_x = np.asarray(img, dtype=float) / 255

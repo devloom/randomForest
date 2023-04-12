@@ -13,7 +13,7 @@ def index(array, item):
             return idx
 
 class Tree():
-    def __init__(self,data):
+    def __init__(self,data,test=False):
         super().__init__()
 
         self.max_depth = 6
@@ -23,8 +23,14 @@ class Tree():
         self.n_classes = len(self.classes)
         #self.n_classes = len(set(data.train_y))
         
-        print("Growing tree:")
-        self.nodes = self.grow(data.train_x,data.train_y)
+        ### test = false means we need to train the tree
+        ### test = true means the tree has already been trained and we read in hyperparameters from file
+        if (test == False):
+            print("Growing tree:")
+            self.nodes = self.grow(data.train_x,data.train_y)
+        else:
+            print("Reading in tree:")
+            #### code here to read in node structure of tree
 
     '''
     def entropy(self,p):
