@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datasets import load_dataset, Image
-from skimage.transform import resize
+#from skimage.transform import resize
 
 #ds = load_dataset("keremberke/pokemon-classification", name="full", split="train[100:200]")
 
