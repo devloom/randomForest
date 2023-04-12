@@ -1,16 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datasets import load_dataset, Image
+import itertools
 #from skimage.transform import resize
 
 #ds = load_dataset("keremberke/pokemon-classification", name="full", split="train[100:200]")
-
+#"keremberke/pokemon-classification",
+#"Bingsu/Cat_and_Dog"
 
 class Dataset:
-	def __init__(self, pth = "keremberke/pokemon-classification"):
+	def __init__(self, pth = "Bingsu/Cat_and_Dog"):
 		self.dataset_path = pth
-		self.ds = load_dataset(self.dataset_path, name="full")
-		self.train_dataset = self.ds['train']
+		self.ds = load_dataset(self.dataset_path, name="full",split="train[2000:6000]")
+		#dataset = load_dataset("parquet", data_files={'train': 'train.parquet', 'test': 'test.parquet'})
+
+		#self.train_dataset = self.ds['train']
+		self.train_dataset = self.ds
 		#self.train_x = self.train_dataset['image']
 		self.pixels = 56
 		self.train_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.train_dataset["image"]]
