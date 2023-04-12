@@ -3,6 +3,13 @@ from dataset import Dataset
 from node import Node
 
 import numpy as np
+from numba import njit
+
+@njit
+def index(array, item):
+    for idx, val in np.ndenumerate(array):
+        if val == item:
+            return idx
 
 class Tree():
     def __init__(self,data):
@@ -10,10 +17,13 @@ class Tree():
 
         self.max_depth = 2
         self.splittingFunction = 'gini'
-        self.n_classes = len(set(data.train_y))
+        self.classes = np.array(list(set(data.train_y)))
+
+        self.n_classes = len(self.classes)
+        #self.n_classes = len(set(data.train_y))
+        
         self.nodes = self.grow(data.train_x,data.train_y)
 
-        #self.createTrees()
 
 
     def setSplittingFunction(self,split):
@@ -40,28 +50,60 @@ class Tree():
     # we need to discuss best way to go about splitting
     def splitter(self,X,y):
         best_col, best_row, best_rgb, best_thr = None, None, None, None
+
+        if (len(y) <= 1):
+            return None,None,None,None
+
+        #num_parent = [np.sum(y == i) for i in range(self.n_classes)]
+        num_parent = [np.sum(y == i) for i in self.classes]
+        best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
+        
+        print(best_gini)
+
         ite = 0
         ###work in progress
         for row in range(len(X[0])):
+            print (row)
             for col in range(len(X[0,:,])):
-                print (row,col)
                 for rgb in range(3):
-                    for threshold in range(0,1,0.1):
-                        for feature in X:
-                            #print(feature)
-                            if (ite == 1):
-                                break
-                            ite += 1
+                    for thr in np.arange(0,1,0.1):
+                        num_left = [0]*self.n_classes
+                        num_right = [0]*self.n_classes
+                        tot_left = 0
+                        tot_right = 0
+                        for i in range(len(X)):
+                            #cls_idx = np.argwhere(self.classes==y[i])[0][0]
+                            cls_idx = index(self.classes,y[i])[0]
+                            if X[i,row,col,rgb] < thr:
+                                num_left[cls_idx] += 1
+                                tot_left += 1
+                            else:
+                                #print(y[i])
+                                num_right[cls_idx] += 1
+                                tot_right += 1
 
+                            
+                        #calculate gini here
+                        gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
+                        gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
+                        gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
+                        #######                  #######
+                        if gini < best_gini:
+                            best_gini = gini
+                            best_row = row
+                            best_col = col
+                            best_rgb = rgb
+                            best_thr = thr
+        
+        print (best_gini, best_row,best_col,best_rgb,best_thr)
         return best_row, best_col, best_rgb, best_thr
 
     
     
     def grow(self,X,y,depth=0):
-        num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
-        predicted_class = np.argmax(num_samples_per_class)
-        #print(num_samples_per_class)
-        #print(predicted_class)
+        #num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
+        num_samples_per_class = [np.sum(y == i) for i in self.classes]
+        predicted_class = self.classes[np.argmax(num_samples_per_class)]
         node = Node(pred_class=predicted_class)
         if depth < self.max_depth:
             rowIdx, colIdx, rgbIdx, thr = self.splitter(X, y)
@@ -77,7 +119,6 @@ class Tree():
                 #        #indices_left = X[:, :, colIdx, rgbIdx] < thr
                 #indices_left = np.array(indices_left)
                 indices_left = X[:,rowIdx,colIdx,rgbIdx] < thr
-                print(depth, indices_left)
                 X_left, y_left = X[indices_left], y[indices_left]
                 X_right, y_right = X[~indices_left], y[~indices_left]
                 node.threshold = thr
@@ -89,6 +130,8 @@ class Tree():
 
 if __name__ == '__main__':
     dataset = Dataset()
+
+    #print(np.array(set(dataset.train_y)))
     #thr = 0.5
     #X = np.array([[1, 2, 3],[4, 5, 6],[7, 8, 9]])/9
     #print (X[:, 0] < thr)
