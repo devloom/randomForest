@@ -5,6 +5,7 @@ from node import Node
 import numpy as np
 from numba import njit
 from tqdm import tqdm 
+import random
 
 @njit
 def index(array, item):
@@ -13,22 +14,38 @@ def index(array, item):
             return idx
 
 class Tree():
-    def __init__(self,data,test=False):
+    def __init__(self,data,firstIdx = 0,lastIdx = 1000,test=False):
         super().__init__()
 
         self.max_depth = 8
         
-        self.classes = np.array(list(set(data.train_y)))
+        
+
+        indices = sorted(np.array([i for i in range(len(data.train_dataset["image"]))]),key=lambda k:random.random())
+        #print(indices)
+
+
+        indices_sub = np.array(indices[firstIdx:lastIdx])
+        #indices_sub = indices[firstIdx:lastIdx]
+        print(type(indices_sub))
+        #self.train_img = [image.convert("RGB").resize((data.pixels,data.pixels)) for image in data.train_dataset["image"]]
+        self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
+        print("here")
+        self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+        print("here")
+        self.train_y = np.array(data.train_dataset['labels'])[indices_sub.astype(int)]
+        print("here")
+
+        self.classes = np.array(list(set(self.train_y)))
 
         self.n_classes = len(self.classes)
         #self.n_classes = len(set(data.train_y))
 
-        
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
             print("Growing tree:")
-            self.nodes = self.grow(data.train_x,data.train_y)
+            self.nodes = self.grow(self.train_x,self.train_y)
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
@@ -56,11 +73,11 @@ class Tree():
 
     def splitter(self,X,y):
         #best_col, best_row, best_rgb, best_thr = None, None, None, None
-        best_cent_split,nearest_cent_ind = None,None
+        best_cent_split,nearest_cent_ind,centroids = None,None,None
 
         if (len(y) <= 1):
             #return None,None,None,None
-            return None,None
+            return None,None,None
 
 
         #num_parent = [np.sum(y == i) for i in range(self.n_classes)]
@@ -101,8 +118,8 @@ class Tree():
             gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
             gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
             gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
-            print('lft: ', tot_left)
-            print('rht: ',tot_right)
+            #print('lft: ', tot_left)
+            #print('rht: ',tot_right)
             #print('gini: ', gini)
             #print('split',centroids_split)
             if (gini < best_gini):
@@ -243,17 +260,17 @@ if __name__ == '__main__':
     tree.print_leaves(node_)
 
     
-    pred_classes = np.zeros(len(dataset.train_x))
+    pred_classes = np.zeros(len(tree.train_x))
     print("here")
     
-    for i in range(len(dataset.train_x)):
+    for i in range(len(tree.train_x)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
-        test_img = dataset.train_x[i]
+        test_img = tree.train_x[i]
         
         while node_.left:
-            nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.train_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
+            nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
             if (i == 2):
                 print(nearest_cent)
                 print(node_.cent_split[nearest_cent])
@@ -265,9 +282,9 @@ if __name__ == '__main__':
             print("pred: ", node_.pred_class)
         pred_classes[i] = node_.pred_class
 
-    print(dataset.train_y[0:100])
+    print(tree.train_y[0:100])
     print(pred_classes[0:100])
     
-    num = np.sum([1 if dataset.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
+    num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
     
