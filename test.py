@@ -1,6 +1,7 @@
 from node import Node
 from dataset import Dataset
 from node import Node
+from tree import Tree
 
 import numpy as np
 from numba import njit
@@ -10,7 +11,8 @@ if __name__ == '__main__':
     dataset = Dataset()
 
     ### Read in already trained tree parameters from file 
-    tree = Tree(dataset,True)
+    #tree = Tree(dataset,True)
+    tree = Tree(dataset)
     node_ = tree.nodes
     #tree.print_leaves(node_,2**(tree.max_depth-1))
     #tree.print_leaves(node_)
