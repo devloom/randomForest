@@ -14,15 +14,16 @@ def index(array, item):
             return idx
 
 class Tree():
-    def __init__(self,data,firstIdx = 0,lastIdx = 1000,test=False):
+    def __init__(self,data,firstIdx = 0,lastIdx = 8000,test=False):
         super().__init__()
 
-        self.max_depth = 8
+        self.max_depth = 5
+        self.pixels = data.pixels
         
         
 
         indices = sorted(np.array([i for i in range(len(data.train_dataset["image"]))]),key=lambda k:random.random())
-        #print(indices)
+        #print(indices
 
 
         indices_sub = np.array(indices[firstIdx:lastIdx])
@@ -89,7 +90,7 @@ class Tree():
         ite = 0
 
         #compute centroid
-        cent = np.zeros((self.n_classes,56,56,3))
+        cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
         num_parent = [np.sum(y == i) for i in self.classes]
         for i in range(len(X)):
             cls_idx = index(self.classes,y[i])[0]

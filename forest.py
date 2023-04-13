@@ -34,8 +34,6 @@ class Forest():
         return node.predicted_class
 
 
-
-
 if __name__ == '__main__':
     ############# load dataset ##########
     dataset = Dataset()
