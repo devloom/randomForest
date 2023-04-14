@@ -22,29 +22,23 @@ class Tree():
         self.pixels = data.pixels
         
 
-        #indices = sorted(np.array([i for i in range(len(data.train_dataset["image"]))]),key=lambda k:random.random())
+        
         indices = sorted(np.array([i for i in range(len(data.train_dataset["img"]))]),key=lambda k:random.random())
         #print(indices)
 
 
         indices_sub = np.array(indices[firstIdx:lastIdx])
-        #indices_sub = indices[firstIdx:lastIdx]
         
-        #print(type(indices_sub))
-        #self.train_img = [image.convert("RGB").resize((data.pixels,data.pixels)) for image in data.train_dataset["image"]]
-        #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
+        
         self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
-        #print("here")
         self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-        #print("here")
-        #self.train_y = np.array(data.train_dataset['labels'])[indices_sub.astype(int)]
         self.train_y = np.array(data.train_dataset['label'])[indices_sub.astype(int)]
-        #print("here")
+        
 
         self.classes = np.array(list(set(self.train_y)))
 
         self.n_classes = len(self.classes)
-        #self.n_classes = len(set(data.train_y))
+        
 
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
@@ -100,10 +94,7 @@ class Tree():
             cls_idx = index(self.classes,y[i])[0]
             cent[cls_idx] += X[i]
         centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
-        #print(centroids)
-
-        #plt.imshow(centroids[1])
-        #plt.show()
+        
 
 
         nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
@@ -139,62 +130,7 @@ class Tree():
 
         #print(best_cent_split, best_gini)
         return best_cent_split, nearest_cent_idx, centroids
-
-
-
         
-
-
-        #centroids[index(self.classes,y[i])[0]]
-
-        #np.sum(X[,:])
-
-
-
-
-
-
-        #centroid[np.mean(X,axis=(0,1))]
-
-
-        ###work in progress
-        '''
-        for row in tqdm(range(len(X[0]))):
-            #print (row)
-            for col in range(len(X[0,:,])):
-                for rgb in range(3):
-                    for thr in np.arange(0,1,0.1):
-                        num_left = [0]*self.n_classes
-                        num_right = [0]*self.n_classes
-                        tot_left = 0
-                        tot_right = 0
-                        for i in range(len(X)):
-                            #cls_idx = np.argwhere(self.classes==y[i])[0][0]
-                            cls_idx = index(self.classes,y[i])[0]
-                            if X[i,row,col,rgb] < thr:
-                                num_left[cls_idx] += 1
-                                tot_left += 1
-                            else:
-                                #print(y[i])
-                                num_right[cls_idx] += 1
-                                tot_right += 1
-
-                            
-                        #calculate gini here
-                        gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
-                        gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
-                        gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
-                        #######
-                        if gini < best_gini:
-                            best_gini = gini
-                            best_row = row
-                            best_col = col
-                            best_rgb = rgb
-                            best_thr = thr
-        
-        #print (best_gini, best_row,best_col,best_rgb,best_thr)
-        return best_row, best_col, best_rgb, best_thr
-        '''
 
     
     
