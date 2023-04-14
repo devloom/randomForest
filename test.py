@@ -31,12 +31,12 @@ if __name__ == '__main__':
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
-        test_img = tree.test_x[i]
+        test_img = dataset.test_x[i]
         
         while node_.left:
-            nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(dataset.n_classes)]))
+            nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
             if (i == 8):
-                print(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(dataset.n_classes)]))
+                print(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
                 print("Nearest cent: ", nearest_cent)
                 print(node_.cent_split[nearest_cent])
             if (node_.cent_split[nearest_cent] == 0):
@@ -47,8 +47,8 @@ if __name__ == '__main__':
             print("pred: ", node_.pred_class)
         pred_classes[i] = node_.pred_class
 
-    print(dataset.test_y[0:100])
-    print(pred_classes[0:100])
+    print(dataset.test_y[750:1250])
+    print(pred_classes[750:1250])
     
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
