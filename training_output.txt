@@ -1,0 +1,541 @@
+<class 'numpy.ndarray'>
+here
+here
+here
+Growing tree:
+Tree at depth  0
+predicted class:  0
+Tree at depth  1
+predicted class:  0
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  8
+predicted class:  0
+Tree at depth  8
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  8
+predicted class:  1
+Tree at depth  8
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  8
+predicted class:  0
+Tree at depth  8
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  1
+predicted class:  1
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  2
+predicted class:  1
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  8
+predicted class:  0
+Tree at depth  8
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  6
+predicted class:  0
+Tree at depth  7
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+Tree at depth  6
+predicted class:  1
+Tree at depth  7
+predicted class:  0
+Tree at depth  8
+predicted class:  1
+Tree at depth  8
+predicted class:  0
+Tree at depth  7
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  0
+predicted class:  1
+predicted class:  1
+predicted class:  0
+predicted class:  1
+here
+0
+0
+1
+0
+1
+1
+0
+0
+1
+1
+1
+1
+pred:  1
+[1 0 1 1 1 0 0 1 0 1 0 0 0 1 1 1 1 0 0 0 1 1 0 0 1 1 1 1 1 0 1 1 1 1 1 0 1
+ 0 0 0 0 1 0 1 1 0 0 1 1 0 0 1 0 1 1 0 1 0 0 1 0 1 0 1 0 0 0 0 0 1 0 0 1 0
+ 0 0 1 1 1 0 1 1 0 1 0 0 1 0 0 1 1 1 0 1 0 0 0 1 1 1]
+[1. 0. 1. 1. 1. 0. 0. 1. 0. 1. 0. 0. 0. 1. 1. 1. 1. 0. 0. 0. 1. 1. 0. 0.
+ 1. 1. 1. 1. 1. 0. 1. 1. 1. 1. 1. 0. 1. 0. 0. 0. 0. 1. 0. 1. 1. 0. 0. 1.
+ 1. 0. 0. 1. 0. 1. 1. 0. 1. 0. 0. 1. 0. 1. 0. 1. 0. 0. 0. 0. 0. 1. 0. 0.
+ 1. 0. 0. 0. 1. 1. 1. 0. 1. 1. 0. 1. 0. 0. 1. 0. 0. 1. 1. 1. 0. 1. 0. 0.
+ 0. 1. 1. 1.]
+accuracy:  0.999

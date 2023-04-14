@@ -29,6 +29,7 @@ class Tree():
 
         indices_sub = np.array(indices[firstIdx:lastIdx])
         #indices_sub = indices[firstIdx:lastIdx]
+        
         #print(type(indices_sub))
         #self.train_img = [image.convert("RGB").resize((data.pixels,data.pixels)) for image in data.train_dataset["image"]]
         #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
@@ -48,7 +49,6 @@ class Tree():
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
-            #print("Growing tree:")
             self.nodes = self.grow(self.train_x,self.train_y)
         else:
             print("Reading in tree:")
@@ -81,7 +81,6 @@ class Tree():
 
         if (len(y) <= 5):
             #print("here")
-            #return None,None,None,None
             return None,None,None
 
 
@@ -102,12 +101,15 @@ class Tree():
             cent[cls_idx] += X[i]
         centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
         #print(centroids)
+
         #plt.imshow(centroids[1])
         #plt.show()
+
 
         nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
         #print(nearest_cent_idx)
         #print(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]))
+
         for i in range(30):
             centroids_split = np.random.randint(2,size=len(centroids))
             num_left = [0]*self.n_classes
@@ -199,11 +201,13 @@ class Tree():
     def grow(self,X,y,depth=0):
         #num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
         num_samples_per_class = [np.sum(y == i) for i in self.classes]
+
         class_probability = [np.sum(y == i)/len(y) for i in self.classes]
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
         #print("Tree at depth ", depth)
         #print("predicted class: ", predicted_class)
         node = Node(pred_class=predicted_class,class_prob=class_probability)
+
         if depth < self.max_depth:
             #rowIdx, colIdx, rgbIdx, thr = self.splitter(X, y)
             bestCentSplit, nearestCentIdx, nodeCentroids = self.splitter(X, y)
@@ -296,4 +300,4 @@ if __name__ == '__main__':
     
     num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
-    
+

@@ -46,8 +46,6 @@ class Forest():
         
 
 
-
-
 if __name__ == '__main__':
     ############# load dataset ##########
     dataset = Dataset()

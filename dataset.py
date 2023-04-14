@@ -6,6 +6,7 @@ from datasets import load_dataset, Image
 #ds = load_dataset("keremberke/pokemon-classification", name="full", split="train[100:200]")
 #"keremberke/pokemon-classification",
 #"Bingsu/Cat_and_Dog"
+
 #"jbarat/plant_species"
 #"cifar10"
 
@@ -52,11 +53,38 @@ class Dataset:
 		return img_x
 
 	def train_statistics(self):
-		x_mean = np.zeros((self.pixels,self.pixels,3))
-		for i in range(len(self.train_x)):
-			x_mean = np.add(x_mean,np.asarray(self.train_x[i], dtype=float) / 255) 
+        x_mean = np.zeros((self.pixels,self.pixels,3))
+        cat_mean = np.zeros((self.pixels,self.pixels,3))
+        dog_mean = np.zeros((self.pixels,self.pixels,3))
 
-		return np.divide(x_mean,len(self.train_x))
+        #print(self.test_x[10])
+
+        for i in range(len(self.test_x)):
+            x_mean = np.add(x_mean,np.asarray(self.test_x[i], dtype=float) / 255) 
+            if self.test_y[i] == 0:
+                cat_mean = np.add(cat_mean,np.asarray(self.test_x[i], dtype=float))
+            if self.test_y[i] == 1:
+                dog_mean = np.add(dog_mean,np.asarray(self.test_x[i], dtype=float))
+                #plt.imshow(self.test_x[i])
+                #plt.title(("Dog "+ str(i)))
+                #plt.show()
+
+        fig, ax = plt.subplots(nrows=1,ncols=2)
+        #print(cat_mean)
+        ax[0].imshow(dog_mean/1000)
+        ax[1].imshow(cat_mean/1000)
+        #plt.show()
+
+        fig, axs = plt.subplots(nrows=5, ncols=5)
+        axs = axs.flat
+        for i in range(25):
+            idx = np.random.randint(1000,2000)
+            axs[i].imshow(self.test_x[idx])  
+        plt.show()
+        
+        
+
+        return np.divide(x_mean,len(self.test_x))
 
 
 	'''

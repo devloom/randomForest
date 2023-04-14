@@ -1,0 +1,157 @@
+<class 'numpy.ndarray'>
+here
+here
+here
+Growing tree:
+Tree at depth  0
+predicted class:  0
+Tree at depth  1
+predicted class:  0
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  1
+predicted class:  1
+Tree at depth  2
+predicted class:  1
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+Tree at depth  2
+predicted class:  0
+Tree at depth  3
+predicted class:  0
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  0
+Tree at depth  3
+predicted class:  1
+Tree at depth  4
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  5
+predicted class:  1
+Tree at depth  4
+predicted class:  0
+Tree at depth  5
+predicted class:  0
+Tree at depth  5
+predicted class:  1
+here
+[83.12983803 81.22060539]
+Nearest cent:  1
+1
+[83.26346968 83.37356354]
+Nearest cent:  0
+1
+[86.57645667 89.99904329]
+Nearest cent:  0
+0
+[78.68469114 76.66465496]
+Nearest cent:  1
+1
+[71.3991504  72.31899561]
+Nearest cent:  0
+1
+pred:  0
+[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+[1. 1. 0. 0. 1. 0. 0. 0. 1. 1. 1. 0. 0. 1. 0. 0. 1. 0. 0. 0. 1. 0. 0. 0.
+ 1. 1. 0. 0. 1. 1. 1. 1. 0. 0. 0. 0. 1. 1. 1. 1. 0. 1. 0. 1. 1. 0. 0. 1.
+ 1. 1. 1. 0. 1. 0. 1. 0. 0. 1. 0. 0. 0. 0. 0. 0. 1. 1. 1. 0. 0. 0. 1. 1.
+ 0. 0. 0. 1. 0. 1. 0. 1. 0. 0. 0. 0. 0. 1. 0. 1. 0. 1. 1. 1. 0. 1. 0. 1.
+ 0. 1. 1. 0.]
+accuracy:  0.5795
