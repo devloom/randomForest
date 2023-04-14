@@ -14,10 +14,6 @@ class Forest():
         super().__init__()
         self.numTrees = 10
         self.trees = [None]*self.numTrees
-        print(self.trees)
-
-        self.splittingFunction = 'gini'
-        #self.createTrees()
 
 
     def createTrees(self, dataset):
@@ -35,21 +31,13 @@ class Forest():
                 node_ = node_.left
             else:
                 node_ = node_.right
-
         return node_.pred_class, node_.class_prob
-        #node = t.nodes
-        #while node.left:
-        #    if inputs[node.feature_index] < node.threshold:
-        #        node = node.left
-        #    else:
-        #        node = node.right
         
-
 
 if __name__ == '__main__':
     ############# load dataset ##########
     dataset = Dataset()
-    #####################################
+    
 
     ########### Create forest ############
     forest = Forest()
@@ -57,7 +45,7 @@ if __name__ == '__main__':
     ########### Grow trees on training data ###########
     forest.createTrees(dataset)
     print(forest.trees)
-    ###################################################
+    
 
     ########### Classify test data ##################
     pred_classes = np.zeros(len(dataset.test_x))
@@ -75,37 +63,10 @@ if __name__ == '__main__':
         if (i == 0):
             print(class_probs)
             print(pred_classes[i])
-        #if (i == 0):
-        #    print(class_vote)
-        #    print(pred_classes[i])
+        
 
     print(dataset.test_y[0:100])
     print(pred_classes[0:100])
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
-    ##################################################
     
-    
-    
-    
-
-    '''
-    print(x_mean)
-    print(y_label)
-    
-    classA = np.array([[True if y_train[i] == 57 else False for i in range(length)]])
-    classB = np.array([[True if y_train[i] == 5 else False for i in range(length)]])
-    classC = np.array([[True if y_train[i] == 127 else False for i in range(length)]])
-    #classA = y_train == 57
-    #classB = y_train == 5
-
-    #plt.scatter(x_mean[0, classA[0, :]], x_mean[1, classA[0, :]], color='b', s=0.3)
-    #plt.scatter(x_mean[0, classB[0, :]], x_mean[1, classB[0, :]], color='r', s=0.3)
-    plt.scatter(x_std[classA[0, :], 0], x_std[classA[0, :], 1], color='b', s=1.5)
-    plt.scatter(x_std[classB[0, :], 0], x_std[classB[0, :], 1], color='r', s=1.5)
-    plt.scatter(x_std[classC[0, :], 0], x_std[classC[0, :], 1], color='g', s=1.5)
-    #print (X_train[0])
-    print (x_mean)
-    print (x_std)
-    plt.show()
-    '''
