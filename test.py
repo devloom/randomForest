@@ -35,6 +35,7 @@ if __name__ == '__main__':
         
         while node_.left:
             nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
+
             if (i == 3):
                 print(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
                 print("Nearest cent: ", nearest_cent)
@@ -43,6 +44,7 @@ if __name__ == '__main__':
                 node_ = node_.left
             else:
                 node_ = node_.right
+                
         if (i == 3):
             print("pred: ", node_.pred_class)
         pred_classes[i] = node_.pred_class
@@ -55,4 +57,3 @@ if __name__ == '__main__':
 
     plt.imshow(dataset.test_x[4])
     plt.show()
-    
