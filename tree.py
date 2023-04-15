@@ -4,21 +4,14 @@ from node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt
-from numba import njit
 from tqdm import tqdm 
 import random
-
-@njit
-def index(array, item):
-    for idx, val in np.ndenumerate(array):
-        if val == item:
-            return idx
 
 class Tree():
     def __init__(self,data,indices,test=False):
         super().__init__()
 
-        self.max_depth = 15
+        self.max_depth = 25
         self.pixels = data.pixels
         
 
@@ -53,76 +46,27 @@ class Tree():
     #determine best split that specifies col #, row #, (r,g,or,b), threshold for each node
     # this still needs to be written
     # we need to discuss best way to go about splitting
-
-
-    ######### NCMC ################
-    #### compute centroid for each class 
-    #### assign centroid randomly either a -1 (left) or 1 (right)
-    #### optimize how we randomly assign centroids by optimizing information gain
-
-
-    def splitter(self,X,y):
-        #best_col, best_row, best_rgb, best_thr = None, None, None, None
-        best_cent_split,nearest_cent_ind,centroids = None,None,None
-
-        if (len(y) <= 5):
-            return None,None,None
-
-
-        
-        num_parent = [np.sum(y == i) for i in self.classes]
-        best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
-        
-        #print("best gini: ", best_gini)
-
-        ite = 0
-
-        #compute centroid
-        cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
-        num_parent = [np.sum(y == i) for i in self.classes]
-
-        for i in range(len(X)):
-            cls_idx = index(self.classes,y[i])[0]
-            cent[cls_idx] += X[i]
-        centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
-        nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
-        
-        for i in range(30):
-            centroids_split = np.random.randint(2,size=len(centroids))
-            num_left = [0]*self.n_classes
-            num_right = num_parent.copy()
-            tot_left = 0
-            tot_right = len(y)
-            
-            for j in range(len(X)):
-                cls_idx = index(self.classes,y[j])[0]
-                if (centroids_split[nearest_cent_idx[j]] == 0):
-                    num_left[cls_idx] += 1
-                    num_right[cls_idx] -= 1
-                    tot_left += 1
-                    tot_right -= 1
-            #calculate gini here
-            gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
-            gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
-            gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
-            if (gini < best_gini):
-                best_gini = gini
-                best_cent_split = centroids_split
-                
-        return best_cent_split, nearest_cent_idx, centroids
         
 
     
     
     def grow(self,X,y,depth=0):
         
-        num_samples_per_class = [np.sum(y == i) for i in self.classes]
-        class_probability = [np.sum(y == i)/len(y) for i in self.classes]
+        num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
+        class_probability = np.array([np.sum(y == i)/len(y) for i in self.classes])
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
         #print("Tree at depth ", depth)
+        #print(len(y))
+        #print(class_probability)
         #print("predicted class: ", predicted_class)
-        node = Node(pred_class=predicted_class,class_prob=class_probability)
+        #new_classes = np.copy(self.classes)
 
+        new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
+        #print(num_samples_per_class)
+        #print(new_classes)
+        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
+
+        '''
         if depth < self.max_depth:
             
             bestCentSplit, nearestCentIdx, nodeCentroids = self.splitter(X, y)
@@ -132,12 +76,26 @@ class Tree():
                 indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
                 X_left, y_left = X[indices_left], y[indices_left]
                 X_right, y_right = X[~indices_left], y[~indices_left]
-                node.cent_split = bestCentSplit
+                    node.cent_split = bestCentSplit
                 node.centroids = nodeCentroids
                 
                 
                 node.left = self.grow(X_left, y_left, depth + 1)
                 node.right = self.grow(X_right, y_right, depth + 1)
+        '''   
+        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
+            
+        indices_left = [False]*len(y)
+        if bestCentSplit is not None:
+            indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
+            X_left, y_left = X[indices_left], y[indices_left]
+            X_right, y_right = X[~indices_left], y[~indices_left]
+            node.cent_split = bestCentSplit
+            node.centroids = nodeCentroids
+            
+            
+            node.left = self.grow(X_left, y_left, depth + 1)
+            node.right = self.grow(X_right, y_right, depth + 1)
         return node
 
     def print_leaves(self,node):
@@ -152,38 +110,71 @@ class Tree():
 if __name__ == '__main__':
     dataset = Dataset()
 
+    indices = np.array([i for i in range(10000)])
     
-    tree = Tree(dataset)
+    tree = Tree(dataset,indices)
     node_ = tree.nodes
     
-    tree.print_leaves(node_)
+    #tree.print_leaves(node_)
 
     
+    ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
     print("here")
     
-    for i in range(len(tree.train_x)):
+    for i in range(len(indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
         test_img = tree.train_x[i]
         
         while node_.left:
-            nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(tree.n_classes)]))
-            if (i == 2):
-                print(nearest_cent)
-                print(node_.cent_split[nearest_cent])
+            nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
+            #if (i == 2):
+            #    print(nearest_cent)
+            #    print(node_.cent_split[nearest_cent])
             if (node_.cent_split[nearest_cent] == 0):
                 node_ = node_.left
             else:
                 node_ = node_.right
-        if (i == 2):
-            print("pred: ", node_.pred_class)
+        #if (i == 2):
+        #    print("pred: ", node_.pred_class)
         pred_classes[i] = node_.pred_class
 
     print(tree.train_y[0:100])
     print(pred_classes[0:100])
     
     num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-    print("accuracy: ", num/len(pred_classes))
+    print("Train accuracy: ", num/len(pred_classes))
+    
 
+    
+    ########### accuracy on test data #################
+    pred_classes = np.zeros(len(dataset.test_x))
+    print("here")
+    
+    for i in range(len(indices)):
+    #for i in range(1950,2050,1):
+        #print(i)
+        node_ = tree.nodes
+        test_img = dataset.test_x[i]
+        
+        while node_.left:
+            nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
+            #if (i == 2):
+                #print(nearest_cent)
+                #print(node_.cent_split[nearest_cent])
+            if (node_.cent_split[nearest_cent] == 0):
+                node_ = node_.left
+            else:
+                node_ = node_.right
+        #if (i == 2):
+        #    print("pred: ", node_.pred_class)
+        pred_classes[i] = node_.pred_class
+
+    print(dataset.test_y[0:100])
+    print(pred_classes[0:100])
+    
+    num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
+    print("Test accuracy: ", num/len(pred_classes))
+    

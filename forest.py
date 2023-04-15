@@ -29,7 +29,7 @@ class Forest():
     def classify(self,x,t):
         node_ = t.nodes      
         while node_.left:
-            nearest_cent = np.argmin(np.array([np.linalg.norm(x - node_.centroids[k]) for k in range(t.n_classes)]))
+            nearest_cent = np.argmin(np.array([np.linalg.norm(x - node_.centroids[k]) for k in range(node_.n_classes)]))
             if (node_.cent_split[nearest_cent] == 0):
                 node_ = node_.left
             else:
@@ -51,9 +51,9 @@ if __name__ == '__main__':
     print(forest.trees)
 
 
-    ########### Classify test data ##################
+    ########### Predict test data ##################
     pred_classes = np.zeros(len(dataset.test_x))
-
+    pred_classes_top3 = np.zeros((len(dataset.test_x),3))
     for i in range(len(dataset.test_x)):
         class_vote = np.zeros(forest.trees[0].n_classes)
         class_probs = np.zeros(forest.trees[0].n_classes)
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         #predicted class (used for top 1 accuracy)
         pred_classes[i] = np.argmax(class_probs)
         #top 5 classes by probability (used for top 5 accuracy)
+        pred_classes_top3[i] = np.argpartition(class_probs,-3)[-3:]
         #definition here...
 
         if (i == 0):
@@ -77,4 +78,7 @@ if __name__ == '__main__':
     print(pred_classes[0:100])
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
+
+    num = np.sum([1 if dataset.test_y[i] in pred_classes_top3[i] else 0 for i in range(len(pred_classes_top3))])
+    print("top 3 accuracy: ", num/len(pred_classes))
     
