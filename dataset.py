@@ -13,7 +13,7 @@ from datasets import load_dataset, Image, concatenate_datasets
 #"cifar10"
 
 class Dataset:
-    def __init__(self, pth = "imagenet-1k", reload=False):
+    def __init__(self, pth = "imagenet-1k"):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -21,7 +21,7 @@ class Dataset:
         # special loading algorithim for imagenet due to size
         if pth == "imagenet-1k":
             # pick which labels we want to use
-            labels = [0, 100, 200] #, 300, 400, 500, 600, 700, 800, 900]
+            self.labels = [6, 7, 107, 340, 406, 407, 420, 471, 755, 855] 
             # STREAMING METHOD 
             train_data = load_dataset(self.dataset_path, split="train", streaming=True)
             self.train_dataset = train_data.filter(lambda img: img['label'] in labels)
@@ -33,55 +33,13 @@ class Dataset:
             #self.test_x = np.array([self.imgNumpy(image) for image in self.test_img])
             #self.test_y = np.array(self.test_dataset['label'])
 
-            # SAVING THE DATA LOCALLY METHOD
-            '''
-            if not (os.path.isfile("../local/imagenet_train_data.hf") or reload):
-                print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
-                # DIRECT LOAD METHOD (Huge datasets)
-                # Instantiate empty datasets
-                train_select = [] #datasets.Dataset()
-                val_select = [] #datasets.Dataset()
-                #load in only 5 percent at a time
-                percent = 1 
-                for k in np.linspace(0, 100-percent, percent*100): 
-                    train_frac = load_dataset(self.dataset_path, split=f"train[{k}%:{k+percent}%]")
-                    val_frac = load_dataset(self.dataset_path, split=f"validation[{k}%:{k+percent}%]")
-                    # select those images which have a label in the label list
-                    train_select = concatenate_datasets([train_select,train_data.filter(lambda img: img['label'] in labels)])
-                    val_select = concatenate_datasets([val_select,val_data.filter(lambda img: img['label'] in labels)])
-
-                # STREAMING METHOD (No straightforward way to save data)
-                train_data = load_dataset(self.dataset_path, split="train", streaming=True)
-                val_data = load_dataset(self.dataset_path, split="validation", streaming=True)
-                train_select = train_data.filter(lambda img: img['label'] in labels)
-                val_select = val_data.filter(lambda img: img['label'] in labels)
-                # DEBUG TBAER: 4/14
-                #print(next(iter(train_select)))
-                #print(next(iter(val_select)))
-                #Here we want to store the values in the iterator, I feel like there should be a nice solution to this
-                print("Prepping for download...")
-                train_select = [*train_select]
-                val_select = [*val_select]
-
-                #Saving out iterable dataset to disk after filtering for future use
-                print("Saving the dataset to '../local/'")
-                train_select.save_to_disk("../local/imagenet_train_data.hf")
-                val_select.save_to_disk("../local/imagenet_test_data.hf")
-
+            ''' ONCE DATASET HAS BEEN LOADED
             #Loading our saved datasets from the disk
             print("Dataset is downloaded. Loading from the disk...")
             self.train_datase = load_from_disk("../local/imagenet_train_data.hf")
             self.test_dataset = load_from_disk("../local/imagenet_test_data.hf")
-
-
-            ## DEBUG TBAER: 4/14
-            #single_img =  (next(iter(train_select))['image']).convert("RGB").resize((self.pixels,self.pixels))
-            #print(single_img)
-            #plt.imshow(single_img)
-            #plt.show()
-
-            self.test_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.test_dataset["image"]]
             '''
+
                        
         else:
             # Load in all the data normally if not imagenet
@@ -119,9 +77,28 @@ class Dataset:
         #plt.show()
 
         return np.divide(x_mean,len(self.test_x))
+
+    def download(self, reload=False):
+        # We download, preprocess, and sort the imagenet data 
+        if not (os.path.isfile("./data/imagenet_train_data.hf") or reload):
+            print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
+            #load in only 5 percent at a time
+            percent = 5 
+            self.ds = load_dataset(self.dataset_path)
+            train_data = self.ds['train']
+            val_data = self.ds['test']
+            # select those images which have a label in the label list
+            train_select = train_data.filter(lambda img: img['label'] in labels)
+            val_select = val_data.filter(lambda img: img['label'] in labels)
+
+            #Saving our dataset to disk after filtering for future use
+            print("Saving the dataset to './data/'")
+            train_select.save_to_disk("./data/imagenet_train_data.hf")
+            val_select.save_to_disk("./data/imagenet_test_data.hf")
+        return
     
 
 
 if __name__ == '__main__':
     dataset = Dataset()
-    #print(dataset.test_img[0])
+    dataset.download()
