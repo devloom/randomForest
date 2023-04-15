@@ -15,23 +15,43 @@ def index(array, item):
             return idx
 
 class Tree():
-    def __init__(self,data,firstIdx = 0,lastIdx = 50000,test=False):
+    def __init__(self,data,firstIdx = 0,lastIdx = 5000,test=False,streaming=False):
         super().__init__()
 
         self.max_depth = 10
         self.pixels = data.pixels
+        self.increment = lastIdx-firstIdx
         
-        indices = sorted(np.array([i for i in range(len(data.train_dataset["img"]))]),key=lambda k:random.random())
-        indices_sub = np.array(indices[firstIdx:lastIdx])
+        if streaming:
+            # Primarily for large datasets like ImageNet
+            print("Starting the streaming algorithm")
+            dataset_head = data.train_dataset.take(self.increment)
+            print("We've taking the head.")
+            print("Now we begin the resizing")
+            resized_img = []
+            for i in range(self.increment):
+                resized_img.append(next(iter(dataset_head))["image"].convert("RGB").resize((data.pixels,data.pixels)))
+                print("Iteration",i)
 
-        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
-        self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-        self.train_y = np.array(data.train_dataset['label'])[indices_sub.astype(int)]
-        
-
-        self.classes = np.array(list(set(self.train_y)))
-
-        self.n_classes = len(self.classes)
+            self.train_img = resized_img
+            #self.train_img = [elem["image"].convert("RGB").resize((data.pixels,data.pixels)) for elem in dataset_head] 
+            print("Resizing done.")
+            self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+            self.train_y = np.array(dataset_head['label'])
+        else:    
+            # Previous method of splitting up training data with no streamed data
+            # Get randomized indicies to shuffle training data
+            indices = sorted(np.array([i for i in range(len(data.train_dataset["img"]))]),key=lambda k:random.random())
+            indices_sub = np.array(indices[firstIdx:lastIdx])
+            # Image resizing for training data occurs in tree
+            self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
+            self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+            # Get correct labels using the randomized indicies
+            self.train_y = np.array(data.train_dataset['label'])[indices_sub.astype(int)]
+            
+            
+            self.classes = np.array(list(set(self.train_y)))
+            self.n_classes = len(self.classes)
         
 
         ### test = false means we need to train the tree
@@ -155,7 +175,7 @@ if __name__ == '__main__':
     dataset = Dataset()
 
     
-    tree = Tree(dataset)
+    tree = Tree(dataset,streaming=True)
     node_ = tree.nodes
     
     tree.print_leaves(node_)
