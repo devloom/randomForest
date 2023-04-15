@@ -15,13 +15,18 @@ def index(array, item):
             return idx
 
 class Tree():
+<<<<<<< HEAD
     def __init__(self,data,firstIdx = 0,lastIdx = 5000,test=False,streaming=False):
+=======
+    def __init__(self,data,indices,test=False):
+>>>>>>> main
         super().__init__()
 
-        self.max_depth = 10
+        self.max_depth = 15
         self.pixels = data.pixels
         self.increment = lastIdx-firstIdx
         
+<<<<<<< HEAD
         if streaming:
             # Primarily for large datasets like ImageNet
             print("Starting the streaming algorithm")
@@ -52,6 +57,17 @@ class Tree():
             
             self.classes = np.array(list(set(self.train_y)))
             self.n_classes = len(self.classes)
+=======
+
+        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
+        self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+        self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+        
+
+        self.classes = np.array(list(set(self.train_y)))
+
+        self.n_classes = len(self.classes)
+>>>>>>> main
         
 
         ### test = false means we need to train the tree

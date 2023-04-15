@@ -2,6 +2,7 @@ import math
 import sklearn
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 from tree import Tree
 from dataset import Dataset
@@ -17,8 +18,10 @@ class Forest():
 
 
     def createTrees(self, dataset):
+        indices = sorted(np.array([i for i in range(len(dataset.train_dataset["img"]))]),key=lambda k:random.random())
         for i in range(self.numTrees):
-            tree = Tree(dataset,i*5000,i*5000+5000)
+            indices_sub = np.array(indices[i*5000:i*5000+5000])
+            tree = Tree(dataset,indices_sub)
             #tree = Tree(dataset,0,30000)
             print("Growing tree: ", i)
             self.trees[i] = tree
@@ -50,6 +53,7 @@ if __name__ == '__main__':
 
     ########### Classify test data ##################
     pred_classes = np.zeros(len(dataset.test_x))
+
     for i in range(len(dataset.test_x)):
         class_vote = np.zeros(forest.trees[0].n_classes)
         class_probs = np.zeros(forest.trees[0].n_classes)
@@ -59,8 +63,12 @@ if __name__ == '__main__':
                 print(j, classIdx, classProb[classIdx])
             class_vote[classIdx] += 1
             class_probs = np.add(class_probs,classProb)
-        
+
+        #predicted class (used for top 1 accuracy)
         pred_classes[i] = np.argmax(class_probs)
+        #top 5 classes by probability (used for top 5 accuracy)
+        #definition here...
+
         if (i == 0):
             print(class_probs)
             print(pred_classes[i])
