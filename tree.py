@@ -15,18 +15,16 @@ def index(array, item):
             return idx
 
 class Tree():
-    def __init__(self,data,firstIdx = 0,lastIdx = 50000,test=False):
+    def __init__(self,data,indices,test=False):
         super().__init__()
 
-        self.max_depth = 10
+        self.max_depth = 15
         self.pixels = data.pixels
         
-        indices = sorted(np.array([i for i in range(len(data.train_dataset["img"]))]),key=lambda k:random.random())
-        indices_sub = np.array(indices[firstIdx:lastIdx])
 
-        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
+        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
         self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-        self.train_y = np.array(data.train_dataset['label'])[indices_sub.astype(int)]
+        self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
         
 
         self.classes = np.array(list(set(self.train_y)))
