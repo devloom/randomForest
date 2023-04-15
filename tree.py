@@ -8,16 +8,39 @@ from tqdm import tqdm
 import random
 
 class Tree():
-    def __init__(self,data,indices,test=False):
+    def __init__(self,data,indices,test=False,streaming=False):
         super().__init__()
 
         self.max_depth = 25
         self.pixels = data.pixels
+        self.increment = 5000
         
+        if streaming:
+            # Primarily for large datasets like ImageNet
+            print("Starting the streaming algorithm")
+            dataset_head = data.train_dataset.take(self.increment)
+            print("We've taking the head.")
+            print("Now we begin the resizing")
+            resized_img = []
+            for i in range(self.increment):
+                resized_img.append(next(iter(dataset_head))["image"].convert("RGB").resize((data.pixels,data.pixels)))
+                print("Iteration",i)
 
-        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
-        self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-        self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+            self.train_img = resized_img
+            #self.train_img = [elem["image"].convert("RGB").resize((data.pixels,data.pixels)) for elem in dataset_head] 
+            print("Resizing done.")
+            self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+            self.train_y = np.array(dataset_head['label'])
+        else:    
+            # Previous method of splitting up training data with no streamed data
+            # Get randomized indicies to shuffle training data
+            
+            # Image resizing for training data occurs in tree
+            self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
+            self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+            # Get correct labels using the randomized indicies
+            self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+            
         
 
         self.classes = np.array(list(set(self.train_y)))
@@ -42,14 +65,7 @@ class Tree():
         h = -p*np.log2(p) - (1-p)*np.log2(1-p)
         return h
     '''
-
-    #determine best split that specifies col #, row #, (r,g,or,b), threshold for each node
-    # this still needs to be written
-    # we need to discuss best way to go about splitting
         
-
-    
-    
     def grow(self,X,y,depth=0):
         
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
@@ -66,23 +82,6 @@ class Tree():
         #print(new_classes)
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
 
-        '''
-        if depth < self.max_depth:
-            
-            bestCentSplit, nearestCentIdx, nodeCentroids = self.splitter(X, y)
-            
-            indices_left = [False]*len(y)
-            if bestCentSplit is not None:
-                indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
-                X_left, y_left = X[indices_left], y[indices_left]
-                X_right, y_right = X[~indices_left], y[~indices_left]
-                    node.cent_split = bestCentSplit
-                node.centroids = nodeCentroids
-                
-                
-                node.left = self.grow(X_left, y_left, depth + 1)
-                node.right = self.grow(X_right, y_right, depth + 1)
-        '''   
         bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
             
         indices_left = [False]*len(y)
@@ -112,7 +111,9 @@ if __name__ == '__main__':
 
     indices = np.array([i for i in range(10000)])
     
-    tree = Tree(dataset,indices)
+
+    tree = Tree(dataset,indices,streaming=False)
+
     node_ = tree.nodes
     
     #tree.print_leaves(node_)
