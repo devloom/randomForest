@@ -81,6 +81,6 @@ if __name__ == '__main__':
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
 
-    #num = np.sum([1 if dataset.test_y[i] in pred_classes_top3[i] else 0 for i in range(len(pred_classes_top3))])
-    #print("top 3 accuracy: ", num/len(pred_classes))
+    num = np.sum([1 if dataset.test_y[i] in pred_classes_top3[i] else 0 for i in range(len(pred_classes_top3))])
+    print("top 3 accuracy: ", num/len(pred_classes))
     
