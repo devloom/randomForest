@@ -84,13 +84,7 @@ class Tree():
         #print(new_classes)
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
 
-<<<<<<< HEAD
-        '''
-        if depth < self.max_depth:
-=======
         bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
->>>>>>> main
->>>>>>> f8602ad (Removing 'HEAD' one last time)
             
         indices_left = [False]*len(y)
         if node.cent_split is not None:
@@ -100,20 +94,6 @@ class Tree():
             X_left, y_left = X[indices_left], y[indices_left]
             X_right, y_right = X[~indices_left], y[~indices_left]
             
-<<<<<<< HEAD
-            indices_left = [False]*len(y)
-            if bestCentSplit is not None:
-                indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
-                X_left, y_left = X[indices_left], y[indices_left]
-                X_right, y_right = X[~indices_left], y[~indices_left]
-                    node.cent_split = bestCentSplit
-                node.centroids = nodeCentroids
-                
-                
-                node.left = self.grow(X_left, y_left, depth + 1)
-                node.right = self.grow(X_right, y_right, depth + 1)
-        '''   
-        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
             
         indices_left = [False]*len(y)
         if bestCentSplit is not None:
@@ -123,8 +103,6 @@ class Tree():
             node.cent_split = bestCentSplit
             node.centroids = nodeCentroids
             
-=======
->>>>>>> f8602ad (Removing 'HEAD' one last time)
             
             node.left = self.grow(X_left, y_left, depth + 1)
             node.right = self.grow(X_right, y_right, depth + 1)
