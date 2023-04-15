@@ -21,9 +21,10 @@ class Forest():
         indices = sorted(np.array([i for i in range(len(dataset.train_dataset["img"]))]),key=lambda k:random.random())
         for i in range(self.numTrees):
             indices_sub = np.array(indices[i*5000:i*5000+5000])
+            print("Growing tree: ", i)
             tree = Tree(dataset,indices_sub)
             #tree = Tree(dataset,0,30000)
-            print("Growing tree: ", i)
+            
             self.trees[i] = tree
 
     def classify(self,x,t):
@@ -66,7 +67,11 @@ if __name__ == '__main__':
 
         #predicted class (used for top 1 accuracy)
         pred_classes[i] = np.argmax(class_probs)
+<<<<<<< HEAD
         #top 5 classes by probability (used for top 5 accuracy)
+=======
+        #top 3 classes by probability (used for top 3 accuracy)
+>>>>>>> main
         pred_classes_top3[i] = np.argpartition(class_probs,-3)[-3:]
         #definition here...
 

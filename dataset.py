@@ -13,7 +13,11 @@ from datasets import load_dataset, Image, concatenate_datasets
 #"cifar10"
 
 class Dataset:
+<<<<<<< HEAD
     def __init__(self, pth = "imagenet-1k"):
+=======
+    def __init__(self, pth = "cifar10", reload=False):
+>>>>>>> main
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size

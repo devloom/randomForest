@@ -34,21 +34,13 @@ class Tree():
         else:    
             # Previous method of splitting up training data with no streamed data
             # Get randomized indicies to shuffle training data
-            indices = sorted(np.array([i for i in range(len(data.train_dataset["img"]))]),key=lambda k:random.random())
-            indices_sub = np.array(indices[firstIdx:lastIdx])
+            
             # Image resizing for training data occurs in tree
-            self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices_sub]
+            self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
             self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
             # Get correct labels using the randomized indicies
-            self.train_y = np.array(data.train_dataset['label'])[indices_sub.astype(int)]
+            self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
             
-            
-            self.classes = np.array(list(set(self.train_y)))
-            self.n_classes = len(self.classes)
-
-        self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
-        self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-        self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
         
 
         self.classes = np.array(list(set(self.train_y)))
@@ -73,6 +65,7 @@ class Tree():
         h = -p*np.log2(p) - (1-p)*np.log2(1-p)
         return h
     '''
+<<<<<<< HEAD
 
     #determine best split that specifies col #, row #, (r,g,or,b), threshold for each node
     # this still needs to be written
@@ -81,6 +74,9 @@ class Tree():
 
     
     
+=======
+        
+>>>>>>> main
     def grow(self,X,y,depth=0):
         
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
@@ -97,11 +93,22 @@ class Tree():
         #print(new_classes)
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
 
+<<<<<<< HEAD
         '''
         if depth < self.max_depth:
+=======
+        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
+>>>>>>> main
             
-            bestCentSplit, nearestCentIdx, nodeCentroids = self.splitter(X, y)
+        indices_left = [False]*len(y)
+        if bestCentSplit is not None:
+            indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
+            X_left, y_left = X[indices_left], y[indices_left]
+            X_right, y_right = X[~indices_left], y[~indices_left]
+            node.cent_split = bestCentSplit
+            node.centroids = nodeCentroids
             
+<<<<<<< HEAD
             indices_left = [False]*len(y)
             if bestCentSplit is not None:
                 indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
@@ -124,6 +131,8 @@ class Tree():
             node.cent_split = bestCentSplit
             node.centroids = nodeCentroids
             
+=======
+>>>>>>> main
             
             node.left = self.grow(X_left, y_left, depth + 1)
             node.right = self.grow(X_right, y_right, depth + 1)
@@ -143,7 +152,13 @@ if __name__ == '__main__':
 
     indices = np.array([i for i in range(10000)])
     
+<<<<<<< HEAD
     tree = Tree(dataset,indices)
+=======
+
+    tree = Tree(dataset,indices,streaming=False)
+
+>>>>>>> main
     node_ = tree.nodes
     
     #tree.print_leaves(node_)
