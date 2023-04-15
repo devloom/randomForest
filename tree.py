@@ -83,7 +83,6 @@ class Tree():
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
 
         bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
->>>>>>> main
             
         indices_left = [False]*len(y)
         if bestCentSplit is not None:
