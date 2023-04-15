@@ -67,14 +67,7 @@ class Tree():
         h = -p*np.log2(p) - (1-p)*np.log2(1-p)
         return h
     '''
-
-    #determine best split that specifies col #, row #, (r,g,or,b), threshold for each node
-    # this still needs to be written
-    # we need to discuss best way to go about splitting
         
-
-    
-    
     def grow(self,X,y,depth=0):
         
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
@@ -91,8 +84,13 @@ class Tree():
         #print(new_classes)
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
 
+<<<<<<< HEAD
         '''
         if depth < self.max_depth:
+=======
+        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
+>>>>>>> main
+>>>>>>> f8602ad (Removing 'HEAD' one last time)
             
         indices_left = [False]*len(y)
         if node.cent_split is not None:
@@ -102,6 +100,7 @@ class Tree():
             X_left, y_left = X[indices_left], y[indices_left]
             X_right, y_right = X[~indices_left], y[~indices_left]
             
+<<<<<<< HEAD
             indices_left = [False]*len(y)
             if bestCentSplit is not None:
                 indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
@@ -124,6 +123,8 @@ class Tree():
             node.cent_split = bestCentSplit
             node.centroids = nodeCentroids
             
+=======
+>>>>>>> f8602ad (Removing 'HEAD' one last time)
             
             node.left = self.grow(X_left, y_left, depth + 1)
             node.right = self.grow(X_right, y_right, depth + 1)
