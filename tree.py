@@ -37,9 +37,11 @@ class Tree():
             
             # Image resizing for training data occurs in tree
             self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
+            #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
             self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
             # Get correct labels using the randomized indicies
             self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+            #self.train_y = np.array(data.train_dataset['labels'])[indices.astype(int)]
             
         
 
@@ -78,19 +80,36 @@ class Tree():
         #new_classes = np.copy(self.classes)
 
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
+
+        #only select a subset of size sqrt(|K|) to calculate centroids
+        new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))))
+
         #print(num_samples_per_class)
         #print(new_classes)
-        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
+        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels)
 
-        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
+        ### subarrays of X and y that correspond to new_classes subset
+        X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes_subset)])
+        y_sub = np.array([label for label in y if (label in new_classes_subset)])
+
+
+
+        node.splitter(X_sub, y_sub)
+
+        #print(X)
+        
+        #print(node.centroids)
+        #print(node.cent_split)
+
+        
             
         indices_left = [False]*len(y)
-        if bestCentSplit is not None:
-            indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
+        if node.cent_split is not None:
+            # for each feature return the index of the nearest centroid where centroids are calculated for each class in the subclass array of length sqrt(|K|)
+            nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - node.centroids[k]) for k in range(node.n_classes)] for i in range(len(X))]),axis=1)
+            indices_left = np.array([True if np.any(np.nonzero(node.cent_split == 0)[0] == nearest_cent_idx[j]) else False for j in range(len(nearest_cent_idx))])
             X_left, y_left = X[indices_left], y[indices_left]
             X_right, y_right = X[~indices_left], y[~indices_left]
-            node.cent_split = bestCentSplit
-            node.centroids = nodeCentroids
             
             
             node.left = self.grow(X_left, y_left, depth + 1)
@@ -109,23 +128,24 @@ class Tree():
 if __name__ == '__main__':
     dataset = Dataset()
 
-    indices = np.array([i for i in range(10000)])
+    train_indices = np.array([i for i in range(0,40000,1)])
     
-    tree = Tree(dataset,indices)
+
+    tree = Tree(dataset,train_indices,streaming=False)
+
     node_ = tree.nodes
     
     #tree.print_leaves(node_)
 
-    
-    ########### accuracy on training data #################
+    ########### accuracy on validation data #################
     pred_classes = np.zeros(len(tree.train_x))
     print("here")
     
-    for i in range(len(indices)):
+    for i in range(len(train_indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
-        test_img = tree.train_x[i]
+        #test_img = tree.train_x[i]
         
         while node_.left:
             nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
@@ -144,15 +164,15 @@ if __name__ == '__main__':
     print(pred_classes[0:100])
     
     num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-    print("Train accuracy: ", num/len(pred_classes))
+    print("Validation accuracy: ", num/len(pred_classes))
     
 
-    
+    test_indices = np.array([i for i in range(10000)])
     ########### accuracy on test data #################
     pred_classes = np.zeros(len(dataset.test_x))
     print("here")
     
-    for i in range(len(indices)):
+    for i in range(len(test_indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
@@ -175,5 +195,6 @@ if __name__ == '__main__':
     print(pred_classes[0:100])
     
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
+    #print([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("Test accuracy: ", num/len(pred_classes))
     

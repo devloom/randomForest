@@ -14,6 +14,7 @@ class Node:
 		self.pixels = pixels
 		self.classes = classes
 		self.n_classes = len(self.classes)
+
 		self.centroids = None
 		self.cent_split = None
 		#self.row_index = 0
@@ -47,11 +48,12 @@ class Node:
 		for i in range(len(X)):
 		    cls_idx = index(self.classes,y[i])[0]
 		    cent[cls_idx] += X[i]
-		centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
-		nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
+		self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
+		#print("node centroids: ", self.centroids)
+		nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
 
-		for i in range(50):
-		    centroids_split = np.random.randint(2,size=len(centroids))
+		for i in range(10):
+		    centroids_split = np.random.randint(2,size=len(self.centroids))
 		    num_left = [0]*self.n_classes
 		    num_right = num_parent.copy()
 		    tot_left = 0
@@ -70,6 +72,4 @@ class Node:
 		    gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
 		    if (gini < best_gini):
 		        best_gini = gini
-		        best_cent_split = centroids_split
-		        
-		return best_cent_split, nearest_cent_idx, centroids
+		        self.cent_split = centroids_split
