@@ -19,6 +19,7 @@ class Forest():
 
     def createTrees(self, dataset):
         indices = sorted(np.array([i for i in range(len(dataset.train_dataset["img"]))]),key=lambda k:random.random())
+        #indices = sorted(np.array([i for i in range(len(dataset.train_dataset["image"]))]),key=lambda k:random.random())
         for i in range(self.numTrees):
             indices_sub = np.array(indices[i*5000:i*5000+5000])
             print("Growing tree: ", i)
@@ -68,7 +69,7 @@ if __name__ == '__main__':
         #predicted class (used for top 1 accuracy)
         pred_classes[i] = np.argmax(class_probs)
         #top 3 classes by probability (used for top 3 accuracy)
-        pred_classes_top3[i] = np.argpartition(class_probs,-3)[-3:]
+        #pred_classes_top3[i] = np.argpartition(class_probs,-3)[-3:]
         #definition here...
 
         if (i == 0):
@@ -80,6 +81,6 @@ if __name__ == '__main__':
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("accuracy: ", num/len(pred_classes))
 
-    num = np.sum([1 if dataset.test_y[i] in pred_classes_top3[i] else 0 for i in range(len(pred_classes_top3))])
-    print("top 3 accuracy: ", num/len(pred_classes))
+    #num = np.sum([1 if dataset.test_y[i] in pred_classes_top3[i] else 0 for i in range(len(pred_classes_top3))])
+    #print("top 3 accuracy: ", num/len(pred_classes))
     

@@ -89,8 +89,10 @@ class Dataset:
             self.train_dataset = self.ds['train']
             self.test_dataset = self.ds['test']
             self.test_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.test_dataset["img"]]
+            #self.test_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.test_dataset["image"]]
             self.test_x = np.array([self.imgNumpy(image) for image in self.test_img])
             self.test_y = np.array(self.test_dataset['label'])
+            #self.test_y = np.array(self.test_dataset['labels'])
 
     def imgNumpy(self,img):
         img_x = np.asarray(img, dtype=float) / 255
