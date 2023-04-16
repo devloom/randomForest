@@ -3,49 +3,45 @@ from numba import njit
 
 @njit
 def index(array, item):
-	for idx, val in np.ndenumerate(array):
-		if val == item:
-			return idx
+    for idx, val in np.ndenumerate(array):
+        if val == item:
+            return idx
 
 class Node:
-	def __init__(self,pred_class,class_prob,classes,pixels):
-		self.pred_class = pred_class
-		self.class_prob = class_prob
-		self.pixels = pixels
-		self.classes = classes
-		self.n_classes = len(self.classes)
+    def __init__(self, pred_class, class_prob, classes, pixels, depth):
+        # information from mother
+        self.pred_class = pred_class
+        self.class_prob = class_prob
+        self.pixels = pixels
+        # centroid calculations
+        self.classes = classes
+        self.n_classes = len(self.classes)
+        self.centroids = None
+        self.cent_split = None
+        # points to daughter nodes
+        self.left = None
+        self.right = None
+        self.depth = depth
 
-		self.centroids = None
-		self.cent_split = None
-		#self.row_index = 0
-		#self.col_index = 0
-		#self.rgb_index = 0
-		#self.threshold = 0
-		self.left = None
-		self.right = None
 
-
-	def splitter(self,X,y):
-        
-		if (len(y) <= 5):
-			#print("here")
-			return
-
+    def splitter(self,X,y):
+        # which data the node was trained on (needed during retraining)
+        self.X = X
+        self.y = y
 
         
-		num_parent = [np.sum(y == i) for i in self.classes]
+        if (len(y) <= 5):
+            #print("here")
+            return 
 
-		best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
+        
+        num_parent = [np.sum(y == i) for i in self.classes]
+        best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
 
-		#if (len(y) <= 15):
-		#	print(y)
-		#	print(self.classes)
-		#	print("num_parent", num_parent, "len y: ", len(y))
-		#	print("best gini: ", best_gini)
+        #print("best gini: ", best_gini)
 
-		ite = 0
+        ite = 0
 
-		#calculate all centroids
         #compute centroid
 		cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
 		num_parent = [np.sum(y == i) for i in self.classes]
@@ -54,14 +50,6 @@ class Node:
 			cls_idx = index(self.classes,y[i])[0]
 			cent[cls_idx] += X[i]
 		self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
-
-		'''
-		print("new classes: ", new_classes)
-		#only select a subset of size sqrt(|K|) of centroids
-		new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
-		print("new classes subset: ", new_classes_subset)
-		centroids_subset = [centroids[np.where(new_classes_subset == i)[0][0]] for i in new_classes_subset]
-		'''
 
 		nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
 
@@ -91,3 +79,15 @@ class Node:
 			if (gini < best_gini):
 				best_gini = gini
 				self.cent_split = centroids_split
+    
+    # function to unpack nodes and store them in a list
+    def find_daughters(self):
+        node_list = [self]
+        for node in node_list:
+            if node.left is not None:
+                node_list.append(node.left)
+            if node.right is not None:
+                node_list.append(node.right)
+        # remove first element, we only want the daughter nodes 
+        node_list = node_list[1:]
+        return node_list
