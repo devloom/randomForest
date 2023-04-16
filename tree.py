@@ -64,10 +64,11 @@ class Tree():
         
     def grow(self,X,y,depth=0):
 
-        self.classes = np.array(list(set(y)))
+        self.classes = np.array(list(set(self.train_y)))
         self.n_classes = len(self.classes)
 
         # number of samples
+        # WARNING!!! Encountering len(y) = 0, causes a runtime error
         num = len(y)
         # find the class probabilites 
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
@@ -76,12 +77,18 @@ class Tree():
         # DEBUG
         #print("for a node of depth", depth)
         #print("num of samples per class", num_samples_per_class)
+        #print("class prob:", class_probability)
         #print("we predict class", predicted_class)
-        # Delete the classes which have no associated samples
+
+        # Delete the classes which have no associated samples and take a subset
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
+        new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
+
+        X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes_subset)])
+        y_sub = np.array([label for label in y if (label in new_classes_subset)])
         # Create a node and find the splitting function
-        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels,depth=depth)
-        node.splitter(X, y)
+        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels,depth=depth)
+        node.splitter(X_sub, y_sub)
         # From the splitting function & centroids assing the data to go to either the left or right right node
         indices_left = [False]*num
         if node.cent_split is not None:
@@ -137,13 +144,13 @@ class Tree():
             node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
 
 
-def main(increment=True):
+def main(increment=False):
     # arbitrary indicies determine how large the training dataset is
     indices = np.array([i for i in range(10000)])
+    # Initialize dataset
+    dataset = Dataset()
 
     if increment:
-        # Initialize dataset
-        dataset = Dataset()
         # split the data for incrmental learning
         init_classes = 5
         dataset.split_data(init_classes)
