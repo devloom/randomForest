@@ -1,7 +1,7 @@
 from node import Node
 from dataset import Dataset
 from node import Node
-
+from datasets import concatenate_datasets
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm 
@@ -10,10 +10,13 @@ import random
 class Tree():
     def __init__(self,data,indices,test=False,streaming=False):
         super().__init__()
-
+        # Setup information
         self.max_depth = 25
         self.pixels = data.pixels
+        self.indices = indices
         self.increment = 5000
+        # for use in resizing
+        self.data = data
         
         if streaming:
             # Primarily for large datasets like ImageNet
@@ -33,26 +36,17 @@ class Tree():
             self.train_y = np.array(dataset_head['label'])
         else:    
             # Previous method of splitting up training data with no streamed data
-            # Get randomized indicies to shuffle training data
-            
             # Image resizing for training data occurs in tree
             self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
-            #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
             self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
-            # Get correct labels using the randomized indicies
             self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
-            #self.train_y = np.array(data.train_dataset['labels'])[indices.astype(int)]
-            
-        
 
-        self.classes = np.array(list(set(self.train_y)))
-
-        self.n_classes = len(self.classes)
         
 
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
+            print("Growing...")
             self.nodes = self.grow(self.train_x,self.train_y)
         else:
             print("Reading in tree:")
@@ -69,40 +63,35 @@ class Tree():
     '''
         
     def grow(self,X,y,depth=0):
-        
+
+        self.classes = np.array(list(set(y)))
+        self.n_classes = len(self.classes)
+
+        # number of samples
+        num = len(y)
+        # find the class probabilites 
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
-        class_probability = np.array([np.sum(y == i)/len(y) for i in self.classes])
+        class_probability = num_samples_per_class/num
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
-        #print("Tree at depth ", depth)
-        #print(len(y))
-        #print(class_probability)
-        #print("predicted class: ", predicted_class)
-        #new_classes = np.copy(self.classes)
-
+        # DEBUG
+        print("for a node of depth", depth)
+        print("num of samples per class", num_samples_per_class)
+        print("we predict class", predicted_class)
+        # Delete the classes which have no associated samples
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
-        #print(num_samples_per_class)
-        #print(new_classes)
-        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
-
+        # Create a node and find the splitting function
+        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels,depth=depth)
         bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
-            
-        indices_left = [False]*len(y)
+        # From the splitting function & centroids assing the data to go to either the left or right right node
+        indices_left = [False]*num
+        # DEBUG 
+        print("node.cent_split is ", node.cent_split)
         if node.cent_split is not None:
             # for each feature return the index of the nearest centroid where centroids are calculated for each class in the subclass array of length sqrt(|K|)
-            nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - node.centroids[k]) for k in range(node.n_classes)] for i in range(len(X))]),axis=1)
+            nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - node.centroids[k]) for k in range(node.n_classes)] for i in range(num)]),axis=1)
             indices_left = np.array([True if np.any(np.nonzero(node.cent_split == 0)[0] == nearest_cent_idx[j]) else False for j in range(len(nearest_cent_idx))])
             X_left, y_left = X[indices_left], y[indices_left]
             X_right, y_right = X[~indices_left], y[~indices_left]
-            
-            
-        indices_left = [False]*len(y)
-        if bestCentSplit is not None:
-            indices_left = np.array([True if np.any(np.nonzero(bestCentSplit == 0)[0] == nearestCentIdx[j]) else False for j in range(len(nearestCentIdx))])
-            X_left, y_left = X[indices_left], y[indices_left]
-            X_right, y_right = X[~indices_left], y[~indices_left]
-            node.cent_split = bestCentSplit
-            node.centroids = nodeCentroids
-            
             
             node.left = self.grow(X_left, y_left, depth + 1)
             node.right = self.grow(X_right, y_right, depth + 1)
@@ -114,23 +103,54 @@ class Tree():
         else:
             self.print_leaves(node.left)
             self.print_leaves(node.right)
-            
-            
 
-if __name__ == '__main__':
-    dataset = Dataset()
+    def retrain(self):
+        # import the data
+        data = self.data
+        # We combine the new data with the old training data for retraining
+        new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in self.indices]
+        new_x = np.array([data.imgNumpy(image) for image in new_train_img])
+        new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
 
+        # unpack the nodes and store them in a list
+        node_list = [self.nodes]
+        for node in node_list:
+            if node.left is not None:
+                node_list.append(node.left)
+            if node.right is not None:
+                node_list.appen(node.right)
+
+        # uniform probability of retraining each node (currently at 10%)
+        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.9)]
+        for node in retrain_nodes:
+            comb_train_x = concatenate_datasets([node.X,new_x])
+            comb_train_y = concatenate_datasets([node.y,new_y])                
+            # We convert to a leaf by removing all of their children
+            node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+
+def main(increment=True):
+    # arbitrary indicies determine how large the training dataset is
     indices = np.array([i for i in range(10000)])
-    
-    tree = Tree(dataset,indices)
-    node_ = tree.nodes
-    
-    #tree.print_leaves(node_)
 
+    if increment:
+        # Initialize dataset
+        dataset = Dataset()
+        # split the data for incrmental learning
+        init_classes = 5
+        dataset.split_data(init_classes)
+        # Train tree on initial data and calculate nodes (node_ is the root node)
+        print("Training tree on original data")
+        tree = Tree(dataset,indices)
+        node_ = tree.nodes
+        # Retrain tree
+        print("Retraining tree")
+        tree.retrain()
+    else:
+        tree = Tree(dataset,indices)
+        node_ = tree.nodes
     
     ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
-    print("here")
     
     for i in range(len(indices)):
     #for i in range(1950,2050,1):
@@ -156,8 +176,6 @@ if __name__ == '__main__':
     
     num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("Train accuracy: ", num/len(pred_classes))
-    
-
     
     ########### accuracy on test data #################
     pred_classes = np.zeros(len(dataset.test_x))
@@ -188,3 +206,8 @@ if __name__ == '__main__':
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("Test accuracy: ", num/len(pred_classes))
     
+    return
+
+if __name__ == '__main__':
+    main()
+
