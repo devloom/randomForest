@@ -76,3 +76,15 @@ class Node:
             if (gini < best_gini):
                 best_gini = gini
                 self.cent_split = centroids_split
+    
+    # function to unpack nodes and store them in a list
+    def find_daughters(self):
+        node_list = [self]
+        for node in node_list:
+            if node.left is not None:
+                node_list.append(node.left)
+            if node.right is not None:
+                node_list.append(node.right)
+        # remove first element, we only want the daughter nodes 
+        node_list = node_list[1:]
+        return node_list

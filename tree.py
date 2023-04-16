@@ -112,7 +112,7 @@ class Tree():
         # find daughters of the root node
         # DEBUG
         print("self.node is",self.nodes)
-        node_list = self.find_daughters(self.nodes)
+        node_list = (self.nodes).find_daughters()
         # DEBUG 
         print("node list", len(node_list))
 
@@ -121,7 +121,7 @@ class Tree():
         print("retraining selection including daughters", len(retrain_nodes))
         # remove the daughter nodes to avoid double retaining nodes
         for node in retrain_nodes:
-            node_daughters = self.find_daughters(node)
+            node_daughters = node.find_daughters()
             retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
         # DEBUG    
         print("retraining selection final", len(retrain_nodes))
@@ -136,17 +136,6 @@ class Tree():
             # We convert to a leaf by removing all of their children
             node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
 
-    # function to unpack nodes and store them in a list
-    def find_daughters(self, node):
-        node_list = [node]
-        for node in node_list:
-            if node.left is not None:
-                node_list.append(node.left)
-            if node.right is not None:
-                node_list.append(node.right)
-        # remove first element, we only want the daughter nodes 
-        node_list = node_list[1:]
-        return node_list
 
 def main(increment=True):
     # arbitrary indicies determine how large the training dataset is

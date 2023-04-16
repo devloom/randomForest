@@ -12,7 +12,7 @@ from datasets import load_dataset, Image
 #"cifar10"
 
 class Dataset:
-    def __init__(self, pth = "cifar10"):
+    def __init__(self, pth = "imagenet-1k"):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -21,25 +21,15 @@ class Dataset:
         if pth == "imagenet-1k":
             # pick which labels we want to use
             labels = [6, 7, 107, 340, 406, 407, 420, 471, 755, 855] 
-            # STREAMING METHOD 
-            train_data = load_dataset(self.dataset_path, split="train", streaming=True)
-            self.train_dataset = train_data.filter(lambda img: img['label'] in labels)
-            val_data = load_dataset(self.dataset_path, split="validation", streaming=True)
-            self.test_dataset = val_data.filter(lambda img: img['label'] in labels)
+            self.labels = labels
+            self.download()
 
-            # NOT YET IMPLEMENTED
-            #self.test_img = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in self.test_dataset["img"]]
-            #self.test_x = np.array([self.imgNumpy(image) for image in self.test_img])
-            #self.test_y = np.array(self.test_dataset['label'])
-
-            ''' ONCE DATASET HAS BEEN LOADED
+            # ONCE DATASET HAS BEEN LOADED
             #Loading our saved datasets from the disk
             print("Dataset is downloaded. Loading from the disk...")
             self.train_datase = load_from_disk("../local/imagenet_train_data.hf")
             self.test_dataset = load_from_disk("../local/imagenet_test_data.hf")
-            '''
 
-                       
         else:
             # Load in all the data normally if not imagenet
             self.ds = load_dataset(self.dataset_path)
@@ -96,21 +86,26 @@ class Dataset:
 
     def download(self, reload=False):
         # We download, preprocess, and sort the imagenet data 
-        if not (os.path.isfile("./download/imagenet_train_data.hf") or reload):
+        if not (os.path.isfile("./downloads/imagenet_test_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
             #load in only 5 percent at a time
             percent = 5 
             self.ds = load_dataset(self.dataset_path)
             train_data = self.ds['train']
-            val_data = self.ds['test']
+            val_data = self.ds['validation']
             # select those images which have a label in the label list
-            train_select = train_data.filter(lambda img: img['label'] in labels)
-            val_select = val_data.filter(lambda img: img['label'] in labels)
+            train_select = train_data.filter(lambda img: img['label'] in self.labels)
+            val_select = val_data.filter(lambda img: img['label'] in self.labels)
+            
+            train_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in train_select["image"]]
+            val_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in val_select["image"]]
 
             #Saving our dataset to disk after filtering for future use
-            print("Saving the dataset to './download/'")
-            train_select.save_to_disk("./download/imagenet_train_data.hf")
-            val_select.save_to_disk("./download/imagenet_test_data.hf")
+            print("Saving the dataset to './downloads/'")
+            train_select.save_to_disk("./downloads/imagenet_train_data.hf")
+            val_select.save_to_disk("./downloads/imagenet_test_data.hf")
+        else:
+            print("Dataset already downloaded!")
         return
 
 
