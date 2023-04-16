@@ -38,6 +38,7 @@ class Tree():
             # Previous method of splitting up training data with no streamed data
             # Image resizing for training data occurs in tree
             self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
+            #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
             self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
             self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
 
@@ -152,7 +153,7 @@ def main(increment=True):
     ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
     
-    for i in range(len(indices)):
+    for i in range(len(train_indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
@@ -175,13 +176,15 @@ def main(increment=True):
     print(pred_classes[0:100])
     
     num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-    print("Train accuracy: ", num/len(pred_classes))
+    print("Validation accuracy: ", num/len(pred_classes))
     
+
+    test_indices = np.array([i for i in range(10000)])
     ########### accuracy on test data #################
     pred_classes = np.zeros(len(dataset.test_x))
     print("here")
     
-    for i in range(len(indices)):
+    for i in range(len(test_indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
@@ -204,6 +207,7 @@ def main(increment=True):
     print(pred_classes[0:100])
     
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
+    #print([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     print("Test accuracy: ", num/len(pred_classes))
     
     return
