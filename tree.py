@@ -1,7 +1,6 @@
 from node import Node
 from dataset import Dataset
 from node import Node
-from datasets import concatenate_datasets
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm 
@@ -75,18 +74,16 @@ class Tree():
         class_probability = num_samples_per_class/num
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
         # DEBUG
-        print("for a node of depth", depth)
-        print("num of samples per class", num_samples_per_class)
-        print("we predict class", predicted_class)
+        #print("for a node of depth", depth)
+        #print("num of samples per class", num_samples_per_class)
+        #print("we predict class", predicted_class)
         # Delete the classes which have no associated samples
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
         # Create a node and find the splitting function
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels,depth=depth)
-        bestCentSplit, nearestCentIdx, nodeCentroids =  node.splitter(X, y)
+        node.splitter(X, y)
         # From the splitting function & centroids assing the data to go to either the left or right right node
         indices_left = [False]*num
-        # DEBUG 
-        print("node.cent_split is ", node.cent_split)
         if node.cent_split is not None:
             # for each feature return the index of the nearest centroid where centroids are calculated for each class in the subclass array of length sqrt(|K|)
             nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - node.centroids[k]) for k in range(node.n_classes)] for i in range(num)]),axis=1)
@@ -112,22 +109,44 @@ class Tree():
         new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in self.indices]
         new_x = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
+        # find daughters of the root node
+        # DEBUG
+        print("self.node is",self.nodes)
+        node_list = self.find_daughters(self.nodes)
+        # DEBUG 
+        print("node list", len(node_list))
 
-        # unpack the nodes and store them in a list
-        node_list = [self.nodes]
+        # uniform probability of retraining each node (currently at 10%)
+        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.95)]
+        print("retraining selection including daughters", len(retrain_nodes))
+        # remove the daughter nodes to avoid double retaining nodes
+        for node in retrain_nodes:
+            node_daughters = self.find_daughters(node)
+            retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
+        # DEBUG    
+        print("retraining selection final", len(retrain_nodes))
+        i = 0
+        for node in retrain_nodes:
+            # DEBUG
+            print("Retrained node:", i)
+            i += 1
+            
+            comb_train_x = np.concatenate((node.X,new_x))
+            comb_train_y = np.concatenate((node.y,new_y))                
+            # We convert to a leaf by removing all of their children
+            node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+
+    # function to unpack nodes and store them in a list
+    def find_daughters(self, node):
+        node_list = [node]
         for node in node_list:
             if node.left is not None:
                 node_list.append(node.left)
             if node.right is not None:
-                node_list.appen(node.right)
-
-        # uniform probability of retraining each node (currently at 10%)
-        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.9)]
-        for node in retrain_nodes:
-            comb_train_x = concatenate_datasets([node.X,new_x])
-            comb_train_y = concatenate_datasets([node.y,new_y])                
-            # We convert to a leaf by removing all of their children
-            node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+                node_list.append(node.right)
+        # remove first element, we only want the daughter nodes 
+        node_list = node_list[1:]
+        return node_list
 
 def main(increment=True):
     # arbitrary indicies determine how large the training dataset is
@@ -153,7 +172,7 @@ def main(increment=True):
     ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
     
-    for i in range(len(train_indices)):
+    for i in range(len(indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
@@ -182,7 +201,6 @@ def main(increment=True):
     test_indices = np.array([i for i in range(10000)])
     ########### accuracy on test data #################
     pred_classes = np.zeros(len(dataset.test_x))
-    print("here")
     
     for i in range(len(test_indices)):
     #for i in range(1950,2050,1):

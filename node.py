@@ -48,31 +48,31 @@ class Node:
         cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
         num_parent = [np.sum(y == i) for i in self.classes]
 
-		for i in range(len(X)):
-		    cls_idx = index(self.classes,y[i])[0]
-		    cent[cls_idx] += X[i]
-		self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
-		#print("node centroids: ", self.centroids)
-		nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
+        for i in range(len(X)):
+            cls_idx = index(self.classes,y[i])[0]
+            cent[cls_idx] += X[i]
+        self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
+        #print("node centroids: ", self.centroids)
+        nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))]),axis=1)
 
-		for i in range(10):
-		    centroids_split = np.random.randint(2,size=len(self.centroids))
-		    num_left = [0]*self.n_classes
-		    num_right = num_parent.copy()
-		    tot_left = 0
-		    tot_right = len(y)
-		    
-		    for j in range(len(X)):
-		        cls_idx = index(self.classes,y[j])[0]
-		        if (centroids_split[nearest_cent_idx[j]] == 0):
-		            num_left[cls_idx] += 1
-		            num_right[cls_idx] -= 1
-		            tot_left += 1
-		            tot_right -= 1
-		    #calculate gini here
-		    gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
-		    gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
-		    gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
-		    if (gini < best_gini):
-		        best_gini = gini
-		        self.cent_split = centroids_split
+        for i in range(10):
+            centroids_split = np.random.randint(2,size=len(self.centroids))
+            num_left = [0]*self.n_classes
+            num_right = num_parent.copy()
+            tot_left = 0
+            tot_right = len(y)
+            
+            for j in range(len(X)):
+                cls_idx = index(self.classes,y[j])[0]
+                if (centroids_split[nearest_cent_idx[j]] == 0):
+                    num_left[cls_idx] += 1
+                    num_right[cls_idx] -= 1
+                    tot_left += 1
+                    tot_right -= 1
+            #calculate gini here
+            gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
+            gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
+            gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
+            if (gini < best_gini):
+                best_gini = gini
+                self.cent_split = centroids_split
