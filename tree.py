@@ -3,8 +3,16 @@ from dataset import Dataset
 from node import Node
 import numpy as np
 import matplotlib.pyplot as plt
+from numba import njit
 from tqdm import tqdm 
 import random
+
+
+@njit
+def index(array, item):
+    for idx, val in np.ndenumerate(array):
+        if val == item:
+            return idx
 
 class Tree():
     def __init__(self,data,indices,test=False,streaming=False):
@@ -74,6 +82,7 @@ class Tree():
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
         class_probability = num_samples_per_class/num
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
+
         # DEBUG
         #print("for a node of depth", depth)
         #print("num of samples per class", num_samples_per_class)
@@ -89,6 +98,7 @@ class Tree():
         # Create a node and find the splitting function
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels,depth=depth)
         node.splitter(X_sub, y_sub)
+
         # From the splitting function & centroids assing the data to go to either the left or right right node
         indices_left = [False]*num
         if node.cent_split is not None:
@@ -146,9 +156,12 @@ class Tree():
 
 def main(increment=False):
     # arbitrary indicies determine how large the training dataset is
-    indices = np.array([i for i in range(10000)])
+
     # Initialize dataset
     dataset = Dataset()
+
+    train_indices = np.array([i for i in range(0,20000,1)])
+
 
     if increment:
         # split the data for incrmental learning
@@ -156,19 +169,19 @@ def main(increment=False):
         dataset.split_data(init_classes)
         # Train tree on initial data and calculate nodes (node_ is the root node)
         print("Training tree on original data")
-        tree = Tree(dataset,indices)
+        tree = Tree(dataset,train_indices)
         node_ = tree.nodes
         # Retrain tree
         print("Retraining tree")
         tree.retrain()
     else:
-        tree = Tree(dataset,indices)
+        tree = Tree(dataset,train_indices)
         node_ = tree.nodes
     
     ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
     
-    for i in range(len(indices)):
+    for i in range(len(train_indices)):
     #for i in range(1950,2050,1):
         #print(i)
         node_ = tree.nodes
