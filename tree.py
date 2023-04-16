@@ -72,24 +72,29 @@ class Tree():
         
     def grow(self,X,y,depth=0):
 
-        self.classes = np.array(list(set(y)))
+        self.classes = np.array(list(set(self.train_y)))
         self.n_classes = len(self.classes)
 
         # number of samples
+        # WARNING!!! Encountering len(y) = 0, causes a runtime error
         num = len(y)
         # find the class probabilites 
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
         class_probability = num_samples_per_class/num
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
 
-        # Delete the classes which have no associated samples
+        # DEBUG
+        #print("for a node of depth", depth)
+        #print("num of samples per class", num_samples_per_class)
+        #print("class prob:", class_probability)
+        #print("we predict class", predicted_class)
+
+        # Delete the classes which have no associated samples and take a subset
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
-        #only select a subset of size sqrt(|K|) of centroids
         new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
-        # subarrays of X and y that correspond to new_classes subset
+
         X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes_subset)])
         y_sub = np.array([label for label in y if (label in new_classes_subset)])
-
         # Create a node and find the splitting function
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels,depth=depth)
         node.splitter(X_sub, y_sub)
@@ -149,25 +154,28 @@ class Tree():
             node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
 
 
-def main(increment=True):
+def main(increment=False):
     # arbitrary indicies determine how large the training dataset is
+
+    # Initialize dataset
+    dataset = Dataset()
+
     train_indices = np.array([i for i in range(0,20000,1)])
 
+
     if increment:
-        # Initialize dataset
-        dataset = Dataset()
         # split the data for incrmental learning
         init_classes = 5
         dataset.split_data(init_classes)
         # Train tree on initial data and calculate nodes (node_ is the root node)
         print("Training tree on original data")
-        tree = Tree(dataset,indices)
+        tree = Tree(dataset,train_indices)
         node_ = tree.nodes
         # Retrain tree
         print("Retraining tree")
         tree.retrain()
     else:
-        tree = Tree(dataset,indices)
+        tree = Tree(dataset,train_indices)
         node_ = tree.nodes
     
     ########### accuracy on training data #################

@@ -12,7 +12,7 @@ from datasets import load_dataset, Image
 #"cifar10"
 
 class Dataset:
-    def __init__(self, pth = "imagenet-1k"):
+    def __init__(self, pth = "cifar10"):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size

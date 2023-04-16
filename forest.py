@@ -63,6 +63,9 @@ if __name__ == '__main__':
         for j in range(forest.numTrees):
             classIdx, classProb = forest.classify(dataset.test_x[i],forest.trees[j])
             if (i == 0):
+                # DEBUG
+                print("classIdx:", classIdx)
+                print("classProb:", classProb)
                 print(j, classIdx, classProb[classIdx])
             class_vote[classIdx] += 1
             class_probs = np.add(class_probs,classProb)
