@@ -22,6 +22,7 @@ class Forest():
         #indices = sorted(np.array([i for i in range(len(dataset.train_dataset["image"]))]),key=lambda k:random.random())
         for i in range(self.numTrees):
             indices_sub = np.array(indices[i*5000:i*5000+5000])
+            #indices_sub = np.array(indices[0:50000])
             print("Growing tree: ", i)
             tree = Tree(dataset,indices_sub)
             #tree = Tree(dataset,0,30000)

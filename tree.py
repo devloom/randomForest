@@ -4,8 +4,16 @@ from node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt
+from numba import njit
 from tqdm import tqdm 
 import random
+
+
+@njit
+def index(array, item):
+    for idx, val in np.ndenumerate(array):
+        if val == item:
+            return idx
 
 class Tree():
     def __init__(self,data,indices,test=False,streaming=False):
@@ -71,6 +79,7 @@ class Tree():
     def grow(self,X,y,depth=0):
         
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
+        #print(len(y))
         class_probability = np.array([np.sum(y == i)/len(y) for i in self.classes])
         predicted_class = self.classes[np.argmax(num_samples_per_class)]
         #print("Tree at depth ", depth)
@@ -80,21 +89,29 @@ class Tree():
         #new_classes = np.copy(self.classes)
 
         new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
+        #print("new classes: ", new_classes)
 
-        #only select a subset of size sqrt(|K|) to calculate centroids
-        new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))))
+        #only select a subset of size sqrt(|K|) of centroids
+        new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
+        #print("new classes subset: ", new_classes_subset)
+
 
         #print(num_samples_per_class)
         #print(new_classes)
         node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels)
-
+        #node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes,pixels=self.pixels)
         ### subarrays of X and y that correspond to new_classes subset
+
         X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes_subset)])
         y_sub = np.array([label for label in y if (label in new_classes_subset)])
+
+        #X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes)])
+        #y_sub = np.array([label for label in y if (label in new_classes)])
 
 
 
         node.splitter(X_sub, y_sub)
+        #print("best split ", node.cent_split)
 
         #print(X)
         
@@ -128,7 +145,7 @@ class Tree():
 if __name__ == '__main__':
     dataset = Dataset()
 
-    train_indices = np.array([i for i in range(0,40000,1)])
+    train_indices = np.array([i for i in range(0,20000,1)])
     
 
     tree = Tree(dataset,train_indices,streaming=False)
