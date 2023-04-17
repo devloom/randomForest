@@ -45,7 +45,10 @@ class Dataset:
         # Split the labels in to the primary training set and the secondary training set
         total_labels = max(list(set(np.array(self.train_dataset['label']))))
         initial_labels = [i for i in range(initial_num)]
-        second_labels = [(i+initial_num) for i in range(total_labels-initial_num)]
+        second_labels = [(i+initial_num) for i in range(total_labels-initial_num+1)]
+        # DEBUG 
+        #print("initial_labels", initial_labels)
+        #print("second_labels", second_labels)
 
         # split the dataset according to the chosen labels
         self.second_train = self.train_dataset.filter(lambda img: img['label'] in second_labels)
