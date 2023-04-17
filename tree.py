@@ -1,6 +1,5 @@
 from node import Node
 from dataset import Dataset
-from node import Node
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
@@ -50,12 +49,26 @@ class Tree():
             self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
 
         
+        # for use in grow
+        self.classes = np.array(list(set(self.train_y)))
+        self.n_classes = len(self.classes)
+        # DEBUG 
+        #print("self.classes:", self.classes)
 
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
             print("Growing...")
-            self.nodes = self.grow(self.train_x,self.train_y)
+            # we are not retraining during initialization
+            retrain = False
+            self.root = Node()
+            self.root.classes_total = self.classes
+            ## DEBUG
+            #print("X:", self.train_x)
+            #print("y:", self.train_y)
+            #print("pixels:", self.pixels)
+            #print("retrain:", retrain)
+            (self.root).grow(X=self.train_x,y=self.train_y,pixels=self.pixels,retrain=retrain)
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
@@ -69,48 +82,8 @@ class Tree():
         h = -p*np.log2(p) - (1-p)*np.log2(1-p)
         return h
     '''
+
         
-    def grow(self,X,y,depth=0):
-
-        self.classes = np.array(list(set(self.train_y)))
-        self.n_classes = len(self.classes)
-
-        # number of samples
-        # WARNING!!! Encountering len(y) = 0, causes a runtime error
-        num = len(y)
-        # find the class probabilites 
-        num_samples_per_class = np.array([np.sum(y == i) for i in self.classes])
-        class_probability = num_samples_per_class/num
-        predicted_class = self.classes[np.argmax(num_samples_per_class)]
-
-        # DEBUG
-        #print("for a node of depth", depth)
-        #print("num of samples per class", num_samples_per_class)
-        #print("class prob:", class_probability)
-        #print("we predict class", predicted_class)
-
-        # Delete the classes which have no associated samples and take a subset
-        new_classes = np.delete(self.classes, np.where(num_samples_per_class == 0))
-        new_classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
-
-        X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in new_classes_subset)])
-        y_sub = np.array([label for label in y if (label in new_classes_subset)])
-        # Create a node and find the splitting function
-        node = Node(pred_class=predicted_class,class_prob=class_probability,classes=new_classes_subset,pixels=self.pixels,depth=depth)
-        node.splitter(X_sub, y_sub)
-
-        # From the splitting function & centroids assing the data to go to either the left or right right node
-        indices_left = [False]*num
-        if node.cent_split is not None:
-            # for each feature return the index of the nearest centroid where centroids are calculated for each class in the subclass array of length sqrt(|K|)
-            nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - node.centroids[k]) for k in range(node.n_classes)] for i in range(num)]),axis=1)
-            indices_left = np.array([True if np.any(np.nonzero(node.cent_split == 0)[0] == nearest_cent_idx[j]) else False for j in range(len(nearest_cent_idx))])
-            X_left, y_left = X[indices_left], y[indices_left]
-            X_right, y_right = X[~indices_left], y[~indices_left]
-            
-            node.left = self.grow(X_left, y_left, depth + 1)
-            node.right = self.grow(X_right, y_right, depth + 1)
-        return node
 
     def print_leaves(self,node):
         if node.left == None:  
@@ -127,19 +100,25 @@ class Tree():
         new_x = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
         # find daughters of the root node
-        # DEBUG
-        print("self.node is",self.nodes)
         node_list = (self.nodes).find_daughters()
         # DEBUG 
-        print("node list", len(node_list))
+        #print("node list", len(node_list))
 
-        # uniform probability of retraining each node (currently at 10%)
+        # uniform probability of retraining each node (currently at 0%)
         retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.95)]
         print("retraining selection including daughters", len(retrain_nodes))
         # remove the daughter nodes to avoid double retaining nodes
         for node in retrain_nodes:
             node_daughters = node.find_daughters()
             retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
+            # Delete the nodes which will be trained over in retraining
+            for condemned in node_daughters:
+                del condemned
+        # Delete the training data from the nodes that won't be retrained
+        for node in node_list: 
+            if node not in retrain_nodes:
+                node.X = None
+                node.y = None
         # DEBUG    
         print("retraining selection final", len(retrain_nodes))
         i = 0
@@ -147,19 +126,26 @@ class Tree():
             # DEBUG
             print("Retrained node:", i)
             i += 1
-            
             comb_train_x = np.concatenate((node.X,new_x))
             comb_train_y = np.concatenate((node.y,new_y))                
-            # We convert to a leaf by removing all of their children
-            node = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+            # Reset self.classes for the larger dataset
+            self.classes = np.array(list(set(comb_train_y)))
+            self.n_classes = len(self.classes)
+            # We reassign the retrained node to the position it occupied in its parent
+            if node.branch == "left":
+                (node.parent).left = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
+            elif node.branch == "right":
+                (node.parent).right = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
+            else:
+                print("node.branch was undefined")
+                break
 
 
 def main(increment=False):
-    # arbitrary indicies determine how large the training dataset is
-
     # Initialize dataset
     dataset = Dataset()
 
+    # arbitrary indicies determine how large the training dataset is
     train_indices = np.array([i for i in range(0,20000,1)])
 
 
@@ -170,13 +156,13 @@ def main(increment=False):
         # Train tree on initial data and calculate nodes (node_ is the root node)
         print("Training tree on original data")
         tree = Tree(dataset,train_indices)
-        node_ = tree.nodes
+        node_ = tree.root
         # Retrain tree
         print("Retraining tree")
         tree.retrain()
     else:
         tree = Tree(dataset,train_indices)
-        node_ = tree.nodes
+        node_ = tree.root
     
     ########### accuracy on training data #################
     pred_classes = np.zeros(len(tree.train_x))
@@ -184,7 +170,7 @@ def main(increment=False):
     for i in range(len(train_indices)):
     #for i in range(1950,2050,1):
         #print(i)
-        node_ = tree.nodes
+        node_ = tree.root
         #test_img = tree.train_x[i]
         
         while node_.left:
@@ -214,7 +200,7 @@ def main(increment=False):
     for i in range(len(test_indices)):
     #for i in range(1950,2050,1):
         #print(i)
-        node_ = tree.nodes
+        node_ = tree.root
         test_img = dataset.test_x[i]
         
         while node_.left:

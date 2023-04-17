@@ -27,8 +27,8 @@ class Dataset:
             # ONCE DATASET HAS BEEN LOADED
             #Loading our saved datasets from the disk
             print("Dataset is downloaded. Loading from the disk...")
-            self.train_datase = load_from_disk("../local/imagenet_train_data.hf")
-            self.test_dataset = load_from_disk("../local/imagenet_test_data.hf")
+            self.train_datase = load_from_disk("../downloads/imagenet_train_data.hf")
+            self.test_dataset = load_from_disk("../downloads/imagenet_test_data.hf")
 
         else:
             # Load in all the data normally if not imagenet
@@ -45,7 +45,10 @@ class Dataset:
         # Split the labels in to the primary training set and the secondary training set
         total_labels = max(list(set(np.array(self.train_dataset['label']))))
         initial_labels = [i for i in range(initial_num)]
-        second_labels = [(i+initial_num) for i in range(total_labels-initial_num)]
+        second_labels = [(i+initial_num) for i in range(total_labels-initial_num+1)]
+        # DEBUG 
+        #print("initial_labels", initial_labels)
+        #print("second_labels", second_labels)
 
         # split the dataset according to the chosen labels
         self.second_train = self.train_dataset.filter(lambda img: img['label'] in second_labels)
@@ -97,8 +100,9 @@ class Dataset:
             train_select = train_data.filter(lambda img: img['label'] in self.labels)
             val_select = val_data.filter(lambda img: img['label'] in self.labels)
             
-            train_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in train_select["image"]]
-            val_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in val_select["image"]]
+            # preprocess data
+            train_select = train_select.map(self.transforms, batched=True)
+            val_select = val_select.map(self.transforms, batched=True)
 
             #Saving our dataset to disk after filtering for future use
             print("Saving the dataset to './downloads/'")
@@ -107,6 +111,12 @@ class Dataset:
         else:
             print("Dataset already downloaded!")
         return
+            
+
+    def transforms(self,data):
+        data["image"] = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in data["image"]]
+        return data
+
 
 
 if __name__ == '__main__':
