@@ -12,7 +12,7 @@ from datasets import load_dataset, Image
 #"cifar10"
 
 class Dataset:
-    def __init__(self, pth = "cifar10"):
+    def __init__(self, pth = "imagenet-1k"):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -27,8 +27,8 @@ class Dataset:
             # ONCE DATASET HAS BEEN LOADED
             #Loading our saved datasets from the disk
             print("Dataset is downloaded. Loading from the disk...")
-            self.train_datase = load_from_disk("../local/imagenet_train_data.hf")
-            self.test_dataset = load_from_disk("../local/imagenet_test_data.hf")
+            self.train_datase = load_from_disk("../downloads/imagenet_train_data.hf")
+            self.test_dataset = load_from_disk("../downloads/imagenet_test_data.hf")
 
         else:
             # Load in all the data normally if not imagenet
@@ -100,8 +100,9 @@ class Dataset:
             train_select = train_data.filter(lambda img: img['label'] in self.labels)
             val_select = val_data.filter(lambda img: img['label'] in self.labels)
             
-            train_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in train_select["image"]]
-            val_select = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in val_select["image"]]
+            # preprocess data
+            train_select = train_select.map(self.transforms, batched=True)
+            val_select = val_select.map(self.transforms, batched=True)
 
             #Saving our dataset to disk after filtering for future use
             print("Saving the dataset to './downloads/'")
@@ -110,6 +111,12 @@ class Dataset:
         else:
             print("Dataset already downloaded!")
         return
+            
+
+    def transforms(self,data):
+        data["image"] = [image.convert("RGB").resize((self.pixels,self.pixels)) for image in data["image"]]
+        return data
+
 
 
 if __name__ == '__main__':
