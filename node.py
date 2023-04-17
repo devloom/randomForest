@@ -12,11 +12,12 @@ class Node:
         # information from mother
         self.pred_class = None
         self.class_prob = None
+        self.classes_total = None
         self.pixels = None
         self.parent = None
         self.branch = None
         # centroid calculations
-        self.classes = None
+        self.classes_subset = None
         self.n_classes = None
         self.centroids = None
         self.cent_split = None
@@ -27,6 +28,68 @@ class Node:
         # if node is retrained
         self.retrain = False
 
+    def grow(self,X,y,pixels,retrain,depth=0):
+        # number of samples
+        # WARNING!!! Encountering len(y) = 0, causes a runtime error
+        num = len(y)
+        # find the class probabilites, set as node attributes 
+        num_samples_per_class = np.array([np.sum(y == i) for i in self.classes_total])
+        self.class_prob = num_samples_per_class/num
+        self.pred_class = self.classes_total[np.argmax(num_samples_per_class)]
+        ### DEBUG
+        #print("for a node of depth", depth)
+        #print("num of samples per class", num_samples_per_class)
+        #print("class prob:", class_probability)
+        #print("we predict class", predicted_class)
+        # Create a node, set attributes and find the splitting function
+        self.pixels = pixels
+        self.depth = depth
+        self.retrain = retrain
+
+        # Delete the classes which have no associated samples and take a subset
+        new_classes = np.delete(self.classes_total, np.where(num_samples_per_class == 0))
+        self.classes_subset = np.random.choice(new_classes,int(np.ceil(np.sqrt(len(new_classes)))),replace=False)
+        self.n_classes = len(self.classes_subset)
+
+        X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in self.classes_subset)])
+        y_sub = np.array([label for label in y if (label in self.classes_subset)])
+        # call splitter
+        ## DEBUG
+        #print("calling splitter")
+        self.splitter(X_sub, y_sub)
+        
+
+        # From the splitting function & centroids assing the data to go to either the left or right right node
+        indices_left = [False]*num
+        ## DEBUG
+        #print("cent_split in grow:", self.cent_split)
+        if self.cent_split is not None:
+            # for each feature return the index of the nearest centroid where centroids are calculated for each class in the subclass array of length sqrt(|K|)
+            nearest_cent_idx = np.argmin(np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(num)]),axis=1)
+            indices_left = np.array([True if np.any(np.nonzero(self.cent_split == 0)[0] == nearest_cent_idx[j]) else False for j in range(len(nearest_cent_idx))])
+            X_left, y_left = X[indices_left], y[indices_left]
+            X_right, y_right = X[~indices_left], y[~indices_left]
+           
+            # Instantiate and Recursively call grow on the left and right daughters
+            self.left = Node()
+            (self.left).classes_total = self.classes_total
+            (self.left).parent = self
+            (self.left).branch = "left"
+            # call grow on the left daughter
+            ## DEBUG
+            #print("X_left:", X_left)
+            #print("y_left:", y_left)
+            #print("pixels:", pixels)
+            #print("retrain:", self.retrain)
+            #print("depth:", depth)
+            (self.left).grow(X_left, y_left, pixels, self.retrain, depth + 1)
+            self.right = Node()
+            (self.right).classes_total = self.classes_total
+            (self.right).parent = self
+            (self.right).branch = "right"
+            (self.right).grow(X_right, y_right, pixels, self.retrain, depth + 1)
+        return 
+
     def splitter(self,X,y):
         # which data the node was trained on (needed only during retraining)
         if not self.retrain: 
@@ -36,11 +99,13 @@ class Node:
 
         
         if (len(y) <= 5):
-            #print("here")
+            self.cent_split = None
+            ## DEBUG
+            #print("Reached end condition. self.cent_split:",self.cent_split)
             return 
 
         
-        num_parent = [np.sum(y == i) for i in self.classes]
+        num_parent = [np.sum(y == i) for i in self.classes_subset]
         best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
 
         #print("best gini: ", best_gini)
@@ -49,14 +114,14 @@ class Node:
 
         # Initialize and find the number of elements in each class
         cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
-        num_parent = [np.sum(y == i) for i in self.classes]
+        num_parent = [np.sum(y == i) for i in self.classes_subset]
 
         # Summing training data of respective centroid class
         for i in range(len(X)):
-            cls_idx = index(self.classes,y[i])[0]
+            cls_idx = index(self.classes_subset,y[i])[0]
             cent[cls_idx] += X[i]
         # Calculate centroid 
-        self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes))])
+        self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes_subset))])
         # Find distance to each centroid and find the closest one
         cent_distance = np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))])
         nearest_cent_idx = np.argmin(cent_distance,axis=1)
@@ -73,7 +138,7 @@ class Node:
             
             for j in range(len(X)):
 
-                cls_idx = index(self.classes,y[j])[0]
+                cls_idx = index(self.classes_subset,y[j])[0]
                 #if (len(y) <= 15):
                     #print(cls_idx, centroids_split, centroids_split[nearest_cent_idx[j]])
                 if (centroids_split[nearest_cent_idx[j]] == 0):
@@ -86,10 +151,16 @@ class Node:
             gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
             gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
             #print(centroids_split, gini)
+            ## DEBUG
+            #print("does gini improve:", gini < best_gini)
             #print(tot_left, tot_right, gini_right, gini_left)
             if (gini < best_gini):
                 best_gini = gini
                 self.cent_split = centroids_split
+                # DEBUG
+                #print("cent_split in splitter:", centroids_split)
+        return 
+
     
     # function to unpack nodes and store them in a list
     def find_daughters(self):
