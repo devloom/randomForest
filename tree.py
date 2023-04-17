@@ -60,7 +60,9 @@ class Tree():
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
             print("Growing...")
-            self.nodes = self.grow(self.train_x,self.train_y)
+            # we are not retraining during initialization
+            retrain = False
+            self.nodes = self.grow(self.train_x,self.train_y,retrain)
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
@@ -76,7 +78,7 @@ class Tree():
     '''
 
         
-    def grow(self,X,y,depth=0):
+    def grow(self,X,y,retrain,depth=0):
 
 
         # number of samples
@@ -108,6 +110,7 @@ class Tree():
         node.n_classes = len(new_classes_subset)
         node.pixels = self.pixels
         node.depth = depth
+        node.retrain = retrain
         node.splitter(X_sub, y_sub)
 
         # From the splitting function & centroids assing the data to go to either the left or right right node
@@ -120,10 +123,10 @@ class Tree():
             X_right, y_right = X[~indices_left], y[~indices_left]
            
             # Recursively call grow on the left and right daughters
-            node.left = self.grow(X_left, y_left, depth + 1)
+            node.left = self.grow(X_left, y_left, retrain, depth + 1)
             (node.left).parent = node
             (node.left).branch = "left"
-            node.right = self.grow(X_right, y_right, depth + 1)
+            node.right = self.grow(X_right, y_right, retrain, depth + 1)
             (node.right).parent = node
             (node.right).branch = "right"
         return node
@@ -172,13 +175,13 @@ class Tree():
             comb_train_x = np.concatenate((node.X,new_x))
             comb_train_y = np.concatenate((node.y,new_y))                
             # Reset self.classes for the larger dataset
-            #self.classes = np.array(list(set(comb_train_y)))
-            #self.n_classes = len(self.classes)
+            self.classes = np.array(list(set(comb_train_y)))
+            self.n_classes = len(self.classes)
             # We reassign the retrained node to the position it occupied in its parent
             if node.branch == "left":
-                (node.parent).left = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+                (node.parent).left = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
             elif node.branch == "right":
-                (node.parent).right = self.grow(comb_train_x, comb_train_y, depth=node.depth)
+                (node.parent).right = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
             else:
                 print("node.branch was undefined")
                 break

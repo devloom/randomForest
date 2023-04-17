@@ -28,10 +28,10 @@ class Node:
         self.retrain = False
 
     def splitter(self,X,y):
-        # which data the node was trained on (needed during retraining)
+        # which data the node was trained on (needed only during retraining)
         if not self.retrain: 
-            self.X_tmp = X
-            self.y_tmp = y
+            self.X = X
+            self.y = y
 
 
         
