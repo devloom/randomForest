@@ -19,6 +19,8 @@ class Tree():
         # Setup information
         self.max_depth = 25
         self.pixels = data.pixels
+        ## DEPRECATED 
+        # Index data should come from the split, and not passed as an initializing argument
         self.indices = indices
         self.increment = 5000
         # for use in resizing
@@ -98,49 +100,83 @@ class Tree():
         new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in self.indices]
         new_X = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
+
+        # sort the additional training data into the leaves of the original tree
+        self.sort(new_X, new_y)
+
         # find daughters of the root node
         node_list = (self.root).find_daughters()
-        # DEBUG 
-        #print("node list", len(node_list))
+        ######## DEBUG BEGIN ##################
+        new_X = []
+        new_y = []
+        for daughter in node_list:
+            new_X.append(daughter.retrain_X)
+            new_y.append(daughter.retrain_y)
+        ## DEBUG
+        #print("new_X is:",new_X)
+        #print("new_y is:",new_y)
+        ######## DEBUG END ##################
 
         # uniform probability of retraining each node (currently at 0%)
-        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.99)]
+        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.80)]
         print("retraining selection including daughters", len(retrain_nodes))
-        # remove the daughter nodes to avoid double retaining nodes
-        for node in retrain_nodes:
-            node_daughters = node.find_daughters()
-            retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
-            # Delete the nodes which will be trained over in retraining
-            for condemned in node_daughters:
-                del condemned
+
         # DEBUG    
-        print("retraining selection final", len(retrain_nodes))
         i = 0
         for node in retrain_nodes:
+            # remove the daughter nodes form the retrain list to avoid double retaining nodes
+            node_daughters = node.find_daughters()
+            retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
             # DEBUG
             print("Retrained node:", i)
             i += 1
 
-            # get the list of arrys on which node was trained
+            # find all retrain data from the daughters 
+            raw_new_X = []
+            raw_new_y = []
+            for daughter in node_daughters:
+                raw_new_X.append(daughter.retrain_X)
+                raw_new_y.append(daughter.retrain_y)
+            # clean out empty lists from the retrain data
+            new_X = [ele for ele in raw_new_X if ele != []]
+            new_y = [ele for ele in raw_new_y if ele != []]
+            ## DEBUG
+            #print("new_X is:",new_X)
+            #print("new_y is:",new_y)
+
+            # get the list of arrays on which node was trained initially
             list_X = node.get_X()
             list_y = node.get_y()
-            # if node is a leaf, we concatenate list_X (which is an array) with the new training data
+            ## DEBUG
+            #print("Length:", len(new_X))
+            #print("Length:", len(new_y))
+
+            # if node is a leaf, we append list_X (which is an array) to the new training data
             if isinstance(list_X, (np.ndarray, np.generic)):
-                comb_train_x = np.concatenate((list_X,new_X))
-                comb_train_y = np.concatenate((list_y,new_y))
+                new_X.append(list_X)
+                new_y.append(list_y)
+                # Then we concatenate
+                comb_train_x = np.concatenate(new_X) 
+                comb_train_y = np.concatenate(new_y)
+                ## DEBUG 
+            #    print("combined x:", comb_train_x.shape)
+            #    print("combined y:", comb_train_y.shape)
             # if the node is not a leaf, we append the new training data to the list of arrays on which node was trained
             else:
-                list_X.append(new_X)
-                # if node is not a leaf, list_X is a list of arrays
+                # if node is not a leaf, we extend list_X (which is a list of arrays) with the retraining data
+                list_X.extend(new_X)
+                list_y.extend(new_y)
+                # Then we concatenate
                 comb_train_x = np.concatenate(list_X)
-                # get the list of y data that node was trained on and append the new training data
-                list_y.append(new_y)
                 comb_train_y = np.concatenate(list_y)
+                ## DEBUG
+            #    print("combined x:", comb_train_x.shape)
+            #    print("combined y:", comb_train_y.shape)
                           
             # Reset self.classes for the larger dataset
             self.classes = np.array(list(set(comb_train_y)))
             self.n_classes = len(self.classes)
-            # We reassign the retrained node to the position it occupied in its parent
+            # We reassign the retrained node to the position it occupied in its parent, and continue to grow the tree on the combined original and retraining data
             if node.branch == "left":
                 new_node = Node(self.classes, node.parent, "left")
                 (node.parent).left = new_node
@@ -152,6 +188,35 @@ class Tree():
             else:
                 print("node.branch was undefined")
                 break
+        # DEBUG
+        ## WARNING, MAY BE ITERATING OVER ALL RETRAIN NODES WITHOUT REMOVING DAUGHTERS
+        print("retraining selection final", len(retrain_nodes))
+        return
+
+    def sort(self, X, y, testing=False):
+        # if we are testing using this algorithim, we want to return the predicted classes
+        if testing:
+            pred_classes = np.zeros(len(X))
+        # loop over all the elements and either sort them to their leaves or find the leaf's predicted class
+        for i in range(len(X)):
+            node_ = self.root
+            while node_.left or node_.right:
+                nearest_cent = np.argmin(np.array([np.linalg.norm(X[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
+                if (node_.cent_split[nearest_cent] == 0):
+                    node_ = node_.left
+                else:
+                    node_ = node_.right
+            if not testing:
+                node_.retrain_X.append(X[i])
+                node_.retrain_y.append(y[i])
+            if testing:
+                pred_classes[i] = node_.pred_class
+        
+        # return the predicted classes if we are testing
+        if testing:
+            return pred_classes
+
+            
 
 
 def main(increment=True):
@@ -159,7 +224,7 @@ def main(increment=True):
     dataset = Dataset()
 
     # arbitrary indicies determine how large the training dataset is
-    train_indices = np.array([i for i in range(0,10000,1)])
+    train_indices = np.array([i for i in range(0,25000,1)])
 
 
     if increment:
@@ -170,7 +235,6 @@ def main(increment=True):
         print("Training tree on original data")
         tree = Tree(dataset,train_indices)
         node_ = tree.root
-        print(node_)
         # Retrain tree
         print("Retraining tree")
         tree.retrain()
@@ -182,24 +246,14 @@ def main(increment=True):
     pred_classes = np.zeros(len(tree.train_x))
     
     for i in range(len(train_indices)):
-    #for i in range(1950,2050,1):
-        print(i)
         node_ = tree.root
-        #test_img = tree.train_x[i]
         
         while node_.left or node_.right:
             nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
-            print("left",node_.left)
-            print("right",node_.right)
-            #if (i == 2):
-            #    print(nearest_cent)
-            print(node_.cent_split[nearest_cent])
             if (node_.cent_split[nearest_cent] == 0):
                 node_ = node_.left
             else:
                 node_ = node_.right
-        #if (i == 2):
-        #    print("pred: ", node_.pred_class)
         pred_classes[i] = node_.pred_class
 
     print(tree.train_y[0:100])

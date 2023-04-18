@@ -33,6 +33,9 @@ class Node:
         # training data
         self.X = None
         self.y = None
+        # retraining data
+        self.retrain_X = []
+        self.retrain_y = []
 
     def get_X(self):
         # if we call get_X on a leaf, we return the stored array
