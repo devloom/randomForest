@@ -52,7 +52,10 @@ class Dataset:
 
         # split the dataset according to the chosen labels
         self.second_train = self.train_dataset.filter(lambda img: img['label'] in second_labels)
+        print("Initial training has ", len(self.second_train), " number of elements")
         self.train_dataset = self.train_dataset.filter(lambda img: img['label'] in initial_labels) 
+        print("Initial training has ", len(self.train_dataset), " number of elements")
+
         # no need to split the testing set
         #self.second_test = self.test_dataset.filter(lambda img: img['label'] in second_labels)
         #self.test_dataset = self.test_dataset.filter(lambda img: img['label'] in initial_labels)

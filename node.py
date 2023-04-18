@@ -1,4 +1,7 @@
 import numpy as np
+import functools
+import operator
+import itertools
 from numba import njit
 
 @njit
@@ -8,14 +11,14 @@ def index(array, item):
             return idx
 
 class Node:
-    def __init__(self):
+    def __init__(self, classes, parent=None, branch=None):
         # information from mother
         self.pred_class = None
         self.class_prob = None
-        self.classes_total = None
+        self.classes_total = classes
         self.pixels = None
-        self.parent = None
-        self.branch = None
+        self.parent = parent
+        self.branch = branch
         # centroid calculations
         self.classes_subset = None
         self.n_classes = None
@@ -27,11 +30,43 @@ class Node:
         self.depth = None
         # if node is retrained
         self.retrain = False
+        # training data
+        self.X = None
+        self.y = None
+        # retraining data
+        self.retrain_X = []
+        self.retrain_y = []
+
+    def get_X(self):
+        # if we call get_X on a leaf, we return the stored array
+        if (self.left is None) and (self.right is None):
+            return self.X
+        else:
+            return self.flatten(self.X)
+
+    def get_y(self):
+        # if we call get_y on a leaf, we return the stored array
+        if (self.left is None) and (self.right is None):
+            return self.y
+        else:
+            return self.flatten(self.y)
+
+    def flatten(self,x):
+        result = []
+        for el in x:
+            if hasattr(el, "__iter__") and not isinstance(el, (np.ndarray, np.generic)):
+                result.extend(self.flatten(el))
+            else:
+                result.append(el)
+        return result
 
     def grow(self,X,y,pixels,retrain,depth=0):
         # number of samples
         # WARNING!!! Encountering len(y) = 0, causes a runtime error
         num = len(y)
+        #if num == 0:
+        #   return
+
         # find the class probabilites, set as node attributes 
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes_total])
         self.class_prob = num_samples_per_class/num
@@ -39,8 +74,8 @@ class Node:
         ### DEBUG
         #print("for a node of depth", depth)
         #print("num of samples per class", num_samples_per_class)
-        #print("class prob:", class_probability)
-        #print("we predict class", predicted_class)
+        #print("class prob:", self.class_prob)
+        #print("we predict class", self.pred_class)
         # Create a node, set attributes and find the splitting function
         self.pixels = pixels
         self.depth = depth
@@ -54,8 +89,6 @@ class Node:
         X_sub = np.array([X[i] for i in range(len(X)) if (y[i] in self.classes_subset)])
         y_sub = np.array([label for label in y if (label in self.classes_subset)])
         # call splitter
-        ## DEBUG
-        #print("calling splitter")
         self.splitter(X_sub, y_sub)
         
 
@@ -69,47 +102,39 @@ class Node:
             indices_left = np.array([True if np.any(np.nonzero(self.cent_split == 0)[0] == nearest_cent_idx[j]) else False for j in range(len(nearest_cent_idx))])
             X_left, y_left = X[indices_left], y[indices_left]
             X_right, y_right = X[~indices_left], y[~indices_left]
-           
             # Instantiate and Recursively call grow on the left and right daughters
-            self.left = Node()
-            (self.left).classes_total = self.classes_total
-            (self.left).parent = self
-            (self.left).branch = "left"
-            # call grow on the left daughter
-            ## DEBUG
-            #print("X_left:", X_left)
-            #print("y_left:", y_left)
-            #print("pixels:", pixels)
-            #print("retrain:", self.retrain)
-            #print("depth:", depth)
+            self.left = Node(self.classes_total, self, "left")
             (self.left).grow(X_left, y_left, pixels, self.retrain, depth + 1)
-            self.right = Node()
-            (self.right).classes_total = self.classes_total
-            (self.right).parent = self
-            (self.right).branch = "right"
+
+            # call grow on the right daughter
+            self.right = Node(self.classes_total, self, "right")
             (self.right).grow(X_right, y_right, pixels, self.retrain, depth + 1)
+
+            # which data the node was trained on (needed during retraining)
+            if not self.retrain: 
+                # in this case we assign self.X and self.Y as a list of the daughters
+                self.X = list([(self.left).X,(self.right).X])
+                self.y = list([(self.left).y,(self.right).y])
+        else:
+            if not self.retrain: 
+                # in the leaf case we assign the actual data to self.X and self.y
+                # DEBUG
+                #print("shape of x:", X_sub.shape)
+                #print("shape of y:", y_sub.shape)
+                self.X = X
+                self.y = y
+
         return 
 
     def splitter(self,X,y):
-        # which data the node was trained on (needed only during retraining)
-        if not self.retrain: 
-            self.X = X
-            self.y = y
-
-
-        
         if (len(y) <= 5):
             self.cent_split = None
             ## DEBUG
             #print("Reached end condition. self.cent_split:",self.cent_split)
             return 
-
         
         num_parent = [np.sum(y == i) for i in self.classes_subset]
         best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
-
-        #print("best gini: ", best_gini)
-
         ite = 0
 
         # Initialize and find the number of elements in each class
@@ -139,8 +164,6 @@ class Node:
             for j in range(len(X)):
 
                 cls_idx = index(self.classes_subset,y[j])[0]
-                #if (len(y) <= 15):
-                    #print(cls_idx, centroids_split, centroids_split[nearest_cent_idx[j]])
                 if (centroids_split[nearest_cent_idx[j]] == 0):
                     num_left[cls_idx] += 1
                     num_right[cls_idx] -= 1
@@ -150,7 +173,6 @@ class Node:
             gini_left = 0.0 if tot_left == 0 else (1.0 - sum((num_left[z]/tot_left)**2 for z in range(len(num_left))))
             gini_right = 0.0 if tot_right == 0 else (1.0 - sum((num_right[z]/tot_right)**2 for z in range(len(num_right))))
             gini = (tot_left*gini_left + tot_right*gini_right)/(tot_left+tot_right)
-            #print(centroids_split, gini)
             ## DEBUG
             #print("does gini improve:", gini < best_gini)
             #print(tot_left, tot_right, gini_right, gini_left)
