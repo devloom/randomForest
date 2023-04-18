@@ -52,9 +52,9 @@ class Dataset:
 
         # split the dataset according to the chosen labels
         self.second_train = self.train_dataset.filter(lambda img: img['label'] in second_labels)
-        print("Initial training has ", len(self.second_train), " number of elements")
+        print("Initial training has", len(self.second_train), "number of elements")
         self.train_dataset = self.train_dataset.filter(lambda img: img['label'] in initial_labels) 
-        print("Initial training has ", len(self.train_dataset), " number of elements")
+        print("Retraining training has", len(self.train_dataset), "number of elements")
 
         # no need to split the testing set
         #self.second_test = self.test_dataset.filter(lambda img: img['label'] in second_labels)
@@ -92,7 +92,7 @@ class Dataset:
 
     def download(self, reload=False):
         # We download, preprocess, and sort the imagenet data 
-        if not (os.path.isfile("./downloads/imagenet_test_data.hf") or reload):
+        if not (os.path.exists("./downloads/imagenet_test_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
             #load in only 5 percent at a time
             percent = 5 
