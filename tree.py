@@ -61,8 +61,7 @@ class Tree():
             print("Growing...")
             # we are not retraining during initialization
             retrain = False
-            self.root = Node()
-            self.root.classes_total = self.classes
+            self.root = Node(self.classes)
             ## DEBUG
             #print("X:", self.train_x)
             #print("y:", self.train_y)
@@ -97,15 +96,15 @@ class Tree():
         data = self.data
         # We combine the new data with the old training data for retraining
         new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in self.indices]
-        new_x = np.array([data.imgNumpy(image) for image in new_train_img])
+        new_X = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
         # find daughters of the root node
-        node_list = (self.nodes).find_daughters()
+        node_list = (self.root).find_daughters()
         # DEBUG 
         #print("node list", len(node_list))
 
         # uniform probability of retraining each node (currently at 0%)
-        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.95)]
+        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.99)]
         print("retraining selection including daughters", len(retrain_nodes))
         # remove the daughter nodes to avoid double retaining nodes
         for node in retrain_nodes:
@@ -114,11 +113,6 @@ class Tree():
             # Delete the nodes which will be trained over in retraining
             for condemned in node_daughters:
                 del condemned
-        # Delete the training data from the nodes that won't be retrained
-        for node in node_list: 
-            if node not in retrain_nodes:
-                node.X = None
-                node.y = None
         # DEBUG    
         print("retraining selection final", len(retrain_nodes))
         i = 0
@@ -126,27 +120,46 @@ class Tree():
             # DEBUG
             print("Retrained node:", i)
             i += 1
-            comb_train_x = np.concatenate((node.X,new_x))
-            comb_train_y = np.concatenate((node.y,new_y))                
+
+            # get the list of arrys on which node was trained
+            list_X = node.get_X()
+            list_y = node.get_y()
+            # if node is a leaf, we concatenate list_X (which is an array) with the new training data
+            if isinstance(list_X, (np.ndarray, np.generic)):
+                comb_train_x = np.concatenate((list_X,new_X))
+                comb_train_y = np.concatenate((list_y,new_y))
+            # if the node is not a leaf, we append the new training data to the list of arrays on which node was trained
+            else:
+                list_X.append(new_X)
+                # if node is not a leaf, list_X is a list of arrays
+                comb_train_x = np.concatenate(list_X)
+                # get the list of y data that node was trained on and append the new training data
+                list_y.append(new_y)
+                comb_train_y = np.concatenate(list_y)
+                          
             # Reset self.classes for the larger dataset
             self.classes = np.array(list(set(comb_train_y)))
             self.n_classes = len(self.classes)
             # We reassign the retrained node to the position it occupied in its parent
             if node.branch == "left":
-                (node.parent).left = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
+                new_node = Node(self.classes, node.parent, "left")
+                (node.parent).left = new_node
+                new_node.grow(comb_train_x, comb_train_y, self.pixels, depth=node.depth, retrain=True)
             elif node.branch == "right":
-                (node.parent).right = self.grow(comb_train_x, comb_train_y, depth=node.depth, retrain=True)
+                new_node = Node(self.classes, node.parent, "right")
+                (node.parent).right = new_node
+                new_node.grow(comb_train_x, comb_train_y, self.pixels, depth=node.depth, retrain=True)
             else:
                 print("node.branch was undefined")
                 break
 
 
-def main(increment=False):
+def main(increment=True):
     # Initialize dataset
     dataset = Dataset()
 
     # arbitrary indicies determine how large the training dataset is
-    train_indices = np.array([i for i in range(0,20000,1)])
+    train_indices = np.array([i for i in range(0,10000,1)])
 
 
     if increment:
@@ -157,6 +170,7 @@ def main(increment=False):
         print("Training tree on original data")
         tree = Tree(dataset,train_indices)
         node_ = tree.root
+        print(node_)
         # Retrain tree
         print("Retraining tree")
         tree.retrain()
@@ -169,15 +183,17 @@ def main(increment=False):
     
     for i in range(len(train_indices)):
     #for i in range(1950,2050,1):
-        #print(i)
+        print(i)
         node_ = tree.root
         #test_img = tree.train_x[i]
         
-        while node_.left:
+        while node_.left or node_.right:
             nearest_cent = np.argmin(np.array([np.linalg.norm(tree.train_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
+            print("left",node_.left)
+            print("right",node_.right)
             #if (i == 2):
             #    print(nearest_cent)
-            #    print(node_.cent_split[nearest_cent])
+            print(node_.cent_split[nearest_cent])
             if (node_.cent_split[nearest_cent] == 0):
                 node_ = node_.left
             else:
@@ -203,7 +219,7 @@ def main(increment=False):
         node_ = tree.root
         test_img = dataset.test_x[i]
         
-        while node_.left:
+        while node_.left or node_.right:
             nearest_cent = np.argmin(np.array([np.linalg.norm(dataset.test_x[i] - node_.centroids[k]) for k in range(node_.n_classes)]))
             #if (i == 2):
                 #print(nearest_cent)
