@@ -62,15 +62,31 @@ class Node:
 
     def grow(self,X,y,pixels,retrain,depth=0):
         # number of samples
-        # WARNING!!! Encountering len(y) = 0, causes a runtime error
         num = len(y)
-        #if num == 0:
-        #   return
+
+        '''
+        ####################### IN PROGRESS ###############
+        ## WARNING (gives runtime error BEFORE grow is called in tree)
+        # store the class probailities in a dictionary for greater felxibility
+        self.class_prob = dict()
+        for typ in self.classes_total:
+            num_samples_per_class = np.sum(y == typ)
+            class_probability = num_samples_per_class/num
+            self.class_prob[typ] = class_probability
+        self.pred_class = max(self.class_prob, key=self.class_prob.get) 
+        ####################### IN PROGRESS ###############
+        '''
 
         # find the class probabilites, set as node attributes 
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes_total])
         self.class_prob = num_samples_per_class/num
-        self.pred_class = self.classes_total[np.argmax(num_samples_per_class)]
+        # store the class probailities in a dictionary for greater felxibility
+        d = dict() 
+        for typ in self.classes_total:
+            d[typ] = self.class_prob[typ]
+        self.class_prob = d
+        self.pred_class = max(self.class_prob, key=self.class_prob.get) 
+            
         ### DEBUG
         #print("for a node of depth", depth)
         #print("num of samples per class", num_samples_per_class)
@@ -195,3 +211,9 @@ class Node:
         # remove first element, we only want the daughter nodes 
         node_list = node_list[1:]
         return node_list
+
+def main():
+    return
+
+if __name__ == "__main__":
+    main()
