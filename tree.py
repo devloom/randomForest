@@ -19,6 +19,7 @@ class Tree():
         # Setup information
         self.max_depth = 25
         self.pixels = data.pixels
+        self.bags = data.bags
         ## DEPRECATED 
         # Index data should come from the split, and not passed as an initializing argument
         self.increment = 5000
@@ -44,10 +45,14 @@ class Tree():
         else:    
             # Previous method of splitting up training data with no streamed data
             # Image resizing for training data occurs in tree
-            self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
-            #self.train_img = [data.train_dataset[i.item()]["image"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
-            self.train_X = np.array([data.imgNumpy(image) for image in self.train_img])
-            self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+            ######DEPRECATED############
+            #self.train_img = [data.train_dataset[i.item()]["img"].convert("RGB").resize((data.pixels,data.pixels)) for i in indices]
+            #self.train_x = np.array([data.imgNumpy(image) for image in self.train_img])
+            #self.train_y = np.array(data.train_dataset['label'])[indices.astype(int)]
+            ##########################
+            ###### BAG OF WORDS ########
+            self.train_X = data.train_X[indices]
+            self.train_y = data.train_y[indices]
 
         
         # for use in grow
@@ -64,7 +69,7 @@ class Tree():
             # we are not retraining during initialization
             retrain = False
             self.root = Node(self.classes)
-            (self.root).grow(X=self.train_X,y=self.train_y,pixels=self.pixels,retrain=retrain)
+            (self.root).grow(X=self.train_X,y=self.train_y,pixels=self.pixels,bags=self.bags,retrain=retrain)
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
@@ -91,12 +96,19 @@ class Tree():
         # import the data
         data = self.data
         # We combine the new data with the old training data for retraining
+        ############# We can't recreate new features with SIFT here, it takes too long, should just use what is already created in dataset
+        ############# probably should make split data split the actually train features, not the datasets
+        '''
         new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in indices]
         new_X = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[indices.astype(int)]
+        '''
+        new_X = data.second_train_X[indices]
+        new_y = data.second_train_y[indices]
 
         # Reset self.classes for the larger dataset
-        self.classes = np.concatenate((self.classes,np.array(list(set(data.second_train['label'])))))
+        #self.classes = np.concatenate((self.classes,np.array(list(set(data.second_train['label'])))))
+        self.classes = np.concatenate((self.classes,np.array(list(set(data.second_train_y)))))
         self.n_classes = len(self.classes)
 
         # sort the additional training data into the leaves of the original tree
@@ -159,11 +171,11 @@ class Tree():
             if node.branch == "left":
                 new_node = Node(self.classes, node.parent, "left")
                 (node.parent).left = new_node
-                new_node.grow(comb_train_X, comb_train_y, self.pixels, depth=node.depth, retrain=True)
+                new_node.grow(comb_train_X, comb_train_y, self.pixels, depth=node.depth, retrain=True, bags=self.bags)
             elif node.branch == "right":
                 new_node = Node(self.classes, node.parent, "right")
                 (node.parent).right = new_node
-                new_node.grow(comb_train_X, comb_train_y, self.pixels, depth=node.depth, retrain=True)
+                new_node.grow(comb_train_X, comb_train_y, self.pixels, depth=node.depth, retrain=True, bags=self.bags)
             else:
                 print("node.branch was undefined")
                 break
@@ -200,17 +212,28 @@ class Tree():
 
 def main(increment=True):
     # Initialize dataset
-    dataset = Dataset()
+
+    #What percentage of the available training dataset do you want to use for training? Enter [0,1]
+    train_percent = 0.1
+    #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
+    test_percent = 0.1
+
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    #dataset = Dataset()
 
     # arbitrary indices determine how large the training dataset is
     # DEPRECATED (The indices should be set by the training data, not via the instantiator)
-    train_indices = np.array([i for i in range(0,25000,1)])
+    
+    #train_indices = np.array([i for i in range(0,25000,1)])
 
 
     if increment:
         # split the data for incrmental learning
         init_classes = 5
         dataset.split_data(init_classes)
+
+        train_length = len(dataset.train_X)
+        train_indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
         # Train tree on initial data and calculate nodes (node_ is the root node)
         print("Training tree on original data")
         tree = Tree(dataset,train_indices)
@@ -218,9 +241,13 @@ def main(increment=True):
         # Retrain tree
         print("Retraining tree")
         ## DEPRECATED (This is only for our current dataset. In the future only run forest.py)
-        retrain_indices = np.array([i for i in range(0,25000,1)])
+        #retrain_indices = np.array([i for i in range(0,25000,1)])
+        retrain_length = len(dataset.second_train_X)
+        retrain_indices = sorted(np.array([i for i in range(retrain_length)]),key=lambda k:random.random())
         tree.retrain(retrain_indices)
     else:
+        train_length = len(dataset.train_X)
+        train_indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
         tree = Tree(dataset,train_indices)
         node_ = tree.root
     
@@ -235,7 +262,7 @@ def main(increment=True):
     print("Validation accuracy: ", num/len(pred_classes))
     
     ########### accuracy on test data #################
-    pred_classes, class_probs = tree.sort(dataset.test_x,testing=True)
+    pred_classes, class_probs = tree.sort(dataset.test_X,testing=True)
 
     print(dataset.test_y[0:100])
     print(pred_classes[0:100])

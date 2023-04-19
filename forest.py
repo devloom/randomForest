@@ -21,7 +21,8 @@ class Forest():
         # save the dataset
         self.ds = dataset
         # create a randomized array of the indices of the training data
-        train_length = len(dataset.train_dataset["img"])
+        #train_length = len(dataset.train_dataset["img"])
+        train_length = len(dataset.train_X)
         indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
 
         for i in range(self.numTrees):
@@ -39,7 +40,9 @@ class Forest():
 
     def retrainTrees(self, full=False):
         # create a randomized array of the indices of the retraining data
-        train_length = len(self.ds.second_train["img"])
+        #train_length = len(self.ds.second_train["img"])
+        train_length = len(self.ds.second_train_X)
+
         indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
         
         i = 0
@@ -80,8 +83,14 @@ class Forest():
         return pred_class, class_probs
 
 def main(increment=False):
+    #What percentage of the available training dataset do you want to use for training? Enter [0,1]
+    train_percent = 1
+    #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
+    test_percent = 1
+
     # load dataset
-    dataset = Dataset()
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    
     ########### Create forest ############
     numTrees = 10
     forest = Forest(numTrees)
@@ -99,7 +108,7 @@ def main(increment=False):
         forest.retrainTrees(full=False)
 
     ########### Predict test data ##################
-    pred_class, class_probs_dicts = forest.classify(dataset.test_x, dataset.test_y) 
+    pred_class, class_probs_dicts = forest.classify(dataset.test_X, dataset.test_y) 
 
     length = len(pred_class)
     # Determining by majority vote

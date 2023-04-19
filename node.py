@@ -17,6 +17,7 @@ class Node:
         self.class_prob = None
         self.classes_total = classes
         self.pixels = None
+        self.bags = None
         self.parent = parent
         self.branch = branch
         # centroid calculations
@@ -60,7 +61,7 @@ class Node:
                 result.append(el)
         return result
 
-    def grow(self,X,y,pixels,retrain,depth=0):
+    def grow(self,X,y,pixels,bags,retrain,depth=0):
         # number of samples
         num = len(y)
 
@@ -82,6 +83,9 @@ class Node:
         self.class_prob = num_samples_per_class/num
         # store the class probailities in a dictionary for greater felxibility
         d = dict() 
+
+        #DEBUG
+        #print("classes total", self.classes_total)
         for typ in self.classes_total:
             d[typ] = self.class_prob[typ]
         self.class_prob = d
@@ -94,6 +98,7 @@ class Node:
         #print("we predict class", self.pred_class)
         # Create a node, set attributes and find the splitting function
         self.pixels = pixels
+        self.bags = bags
         self.depth = depth
         self.retrain = retrain
 
@@ -120,11 +125,11 @@ class Node:
             X_right, y_right = X[~indices_left], y[~indices_left]
             # Instantiate and Recursively call grow on the left and right daughters
             self.left = Node(self.classes_total, self, "left")
-            (self.left).grow(X_left, y_left, pixels, self.retrain, depth + 1)
+            (self.left).grow(X_left, y_left, pixels, bags, self.retrain, depth + 1)
 
             # call grow on the right daughter
             self.right = Node(self.classes_total, self, "right")
-            (self.right).grow(X_right, y_right, pixels, self.retrain, depth + 1)
+            (self.right).grow(X_right, y_right, pixels, bags, self.retrain, depth + 1)
 
             # which data the node was trained on (needed during retraining)
             if not self.retrain: 
@@ -155,6 +160,7 @@ class Node:
 
         # Initialize and find the number of elements in each class
         cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
+        #cent = np.zeros((self.n_classes,self.bags))
         num_parent = [np.sum(y == i) for i in self.classes_subset]
 
         # Summing training data of respective centroid class
