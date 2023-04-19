@@ -21,7 +21,6 @@ class Tree():
         self.pixels = data.pixels
         ## DEPRECATED 
         # Index data should come from the split, and not passed as an initializing argument
-        self.indices = indices
         self.increment = 5000
         # for use in resizing
         self.data = data
@@ -53,6 +52,8 @@ class Tree():
         
         # for use in grow
         self.classes = np.array(list(set(self.train_y)))
+        ## DEBUG
+        #print("self.classes is:", self.classes)
         self.n_classes = len(self.classes)
 
         ## IN PROGRESS (Ability to save trees and then reload)
@@ -67,7 +68,6 @@ class Tree():
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
-
     
     '''
     ## IN PROGRESS (Entropy function for splitting function, currently using gini scores)
@@ -80,8 +80,6 @@ class Tree():
         return h
     '''
 
-        
-
     def print_leaves(self,node):
         if node.left == None:  
             print ("predicted class: ", node.pred_class)
@@ -89,13 +87,17 @@ class Tree():
             self.print_leaves(node.left)
             self.print_leaves(node.right)
 
-    def retrain(self):
+    def retrain(self, indices):
         # import the data
         data = self.data
         # We combine the new data with the old training data for retraining
-        new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in self.indices]
+        new_train_img = [data.second_train[i.item()]["img"].convert("RGB").resize((self.pixels,self.pixels)) for i in indices]
         new_X = np.array([data.imgNumpy(image) for image in new_train_img])
-        new_y = np.array(data.second_train['label'])[self.indices.astype(int)]
+        new_y = np.array(data.second_train['label'])[indices.astype(int)]
+
+        # Reset self.classes for the larger dataset
+        self.classes = np.concatenate((self.classes,np.array(list(set(data.second_train['label'])))))
+        self.n_classes = len(self.classes)
 
         # sort the additional training data into the leaves of the original tree
         self.sort(new_X, new_y)
@@ -105,20 +107,21 @@ class Tree():
 
         # uniform probability of retraining each node (currently at 40%)
         retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.60)]
-        print("retraining selection including daughters", len(retrain_nodes))
+        ## DEBUG
+        #print("retraining selection including daughters", len(retrain_nodes))
 
         for node in retrain_nodes:
             # remove the daughter nodes form the retrain list to avoid double retaining nodes
             node_daughters = node.find_daughters()
             retrain_nodes = [node for node in retrain_nodes if node not in node_daughters]
         ## DEBUG
-        print("New length of retrain nodes is:", len(retrain_nodes))
+        #print("New length of retrain nodes is:", len(retrain_nodes))
 
         # DEBUG    
         i = 0
         for node in retrain_nodes:
             # DEBUG
-            print("Retrained node:", i)
+            #print("Retrained node:", i)
             i += 1
 
             # find all retrain data from the daughters 
@@ -152,9 +155,6 @@ class Tree():
                 comb_train_X = np.concatenate(list_X)
                 comb_train_y = np.concatenate(list_y)
                           
-            # Reset self.classes for the larger dataset
-            self.classes = np.array(list(set(comb_train_y)))
-            self.n_classes = len(self.classes)
             # We reassign the retrained node to the position it occupied in its parent, and continue to grow the tree on the combined original and retraining data
             if node.branch == "left":
                 new_node = Node(self.classes, node.parent, "left")
@@ -169,10 +169,11 @@ class Tree():
                 break
         return
 
-    def sort(self, X, y, testing=False):
+    def sort(self, X, y=[], testing=False):
         # if we are testing using this algorithim, we want to return the predicted classes
         if testing:
             pred_classes = np.zeros(len(X))
+            class_probs = []
         # loop over all the elements and either sort them to their leaves or find the leaf's predicted class
         for i in range(len(X)):
             node_ = self.root
@@ -187,21 +188,22 @@ class Tree():
                 node_.retrain_y.append(y[i])
             if testing:
                 pred_classes[i] = node_.pred_class
+                class_probs.append(node_.class_prob)
         
         # return the predicted classes if we are testing
         if testing:
-            num = np.sum([1 if y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-            return pred_classes, num
-
-            
+            # DEBUG
+            #print("pred_classes in sort:", pred_classes)
+            #print("class_probs in sort:", class_probs)
+            return pred_classes, class_probs
 
 
 def main(increment=True):
     # Initialize dataset
     dataset = Dataset()
 
-    # arbitrary indicies determine how large the training dataset is
-    # DEPRECATED (The indicies should be set by the training data, not via the instantiator)
+    # arbitrary indices determine how large the training dataset is
+    # DEPRECATED (The indices should be set by the training data, not via the instantiator)
     train_indices = np.array([i for i in range(0,25000,1)])
 
 
@@ -215,24 +217,30 @@ def main(increment=True):
         node_ = tree.root
         # Retrain tree
         print("Retraining tree")
-        tree.retrain()
+        ## DEPRECATED (This is only for our current dataset. In the future only run forest.py)
+        retrain_indices = np.array([i for i in range(0,25000,1)])
+        tree.retrain(retrain_indices)
     else:
         tree = Tree(dataset,train_indices)
         node_ = tree.root
     
     ########### accuracy on training data #################
-    pred_classes, num = tree.sort(tree.train_X,tree.train_y,testing=True)
+    pred_classes, class_probs = tree.sort(tree.train_X,testing=True)
 
     print(tree.train_y[0:100])
     print(pred_classes[0:100])
+
+    num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     
     print("Validation accuracy: ", num/len(pred_classes))
     
     ########### accuracy on test data #################
-    pred_classes, num = tree.sort(dataset.test_x,dataset.test_y,testing=True)
+    pred_classes, class_probs = tree.sort(dataset.test_x,testing=True)
 
     print(dataset.test_y[0:100])
     print(pred_classes[0:100])
+
+    num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
     
     print("Test accuracy: ", num/len(pred_classes))
     
