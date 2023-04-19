@@ -27,18 +27,41 @@ class Dataset:
 
         else:
             # Load in all the data normally if not imagenet
-            self.ds = load_dataset(self.dataset_path)
-            self.train_dataset = self.ds['train']
-            self.test_dataset = self.ds['test']
+            # self.ds = load_dataset(self.dataset_path)
+            # self.train_dataset = self.ds['train']
+            # self.test_dataset = self.ds['test']
 
-            train_dataset = self.train_dataset
-            test_dataset = self.test_dataset
+                        # download the dataset
+            imagenet = load_dataset(
+                'frgfm/imagenette',
+                'full_size',
+                split='train',
+                ignore_verifications=False  # set to True if seeing splits Error
+            )
 
-            train_img = [np.array(train_dataset[i]['img'], dtype=float) for i in range(len(train_dataset['img']))]
-            train_img = [cv2.normalize(train_img[i], None, 0, 255, cv2.NORM_MINMAX).astype('uint8') for i in range(len(train_dataset['img']))]
+            images_training = []
+
+            for n in range(0,len(imagenet)):
+                # generate np arrays from the dataset images
+                images_training.append(np.array(imagenet[n]['image']))
+
+            # train_dataset = self.train_dataset
+            # test_dataset = self.test_dataset
+
+            # train_img = [np.array(train_dataset[i]['img'], dtype=float) for i in range(len(train_dataset['img']))]
+            # train_img = [cv2.normalize(train_img[i], None, 0, 255, cv2.NORM_MINMAX).astype('uint8') for i in range(len(train_dataset['img']))]
+
+            # bw_images = []
+            # for img in train_img:
+            #     # if RGB, transform into grayscale
+            #     if len(img.shape) == 3:
+            #         bw_images.append(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
+            #     else:
+            #         # if grayscale, do not transform
+            #         bw_images.append(img)
 
             bw_images = []
-            for img in train_img:
+            for img in images_training:
                 # if RGB, transform into grayscale
                 if len(img.shape) == 3:
                     bw_images.append(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
@@ -58,17 +81,17 @@ class Dataset:
                 keypoints.append(img_keypoints)
                 descriptors.append(img_descriptors)
             
-            # output_image = []
-            # for x in range(5):
-            #     output_image.append(cv2.drawKeypoints(bw_images[x], keypoints[x], 0, (255, 0, 0),
-            #                                  flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS))
-            #     plt.imshow(output_image[x], cmap='gray')
-            #     plt.show() 
+            output_image = []
+            for x in range(5):
+                output_image.append(cv2.drawKeypoints(bw_images[x], keypoints[x], 0, (255, 0, 0),
+                                             flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS))
+                plt.imshow(output_image[x], cmap='gray')
+                plt.show() 
 
             # set numpy seed for reproducability
             np.random.seed(0)
             # select 1000 random image index values
-            sample_idx = np.random.randint(0, len(self.ds)+1, 1000).tolist()
+            sample_idx = np.random.randint(0, len(imagenet)+1, 1000).tolist()
 
             # extract the sample from descriptors
             # (we don't need keypoints)
@@ -99,6 +122,8 @@ class Dataset:
                     img_visual_words, distance = vq(img_descriptors, codebook)
                     visual_words.append(img_visual_words)
 
+            self.visual_words = visual_words
+
             frequency_vectors = []
             for img_visual_words in visual_words:
                 # create a frequency vector for each image
@@ -109,7 +134,7 @@ class Dataset:
             # stack together in numpy array
             frequency_vectors = np.stack(frequency_vectors)
 
-            plt.bar(list(range(k)), frequency_vectors[0])
+            plt.bar(list(range(k)), frequency_vectors[200])
             plt.show()
 
 
