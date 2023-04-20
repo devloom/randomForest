@@ -57,18 +57,16 @@ class Tree():
         
         # for use in grow
         self.classes = np.array(list(set(self.train_y)))
-        ## DEBUG
-        #print("self.classes is:", self.classes)
         self.n_classes = len(self.classes)
 
         ## IN PROGRESS (Ability to save trees and then reload)
         ### test = false means we need to train the tree
         ### test = true means the tree has already been trained and we read in hyperparameters from file
         if (test == False):
-            print("Growing...")
             # we are not retraining during initialization
             retrain = False
             self.root = Node(self.classes)
+            self.root.fourD = self.data.fourD
             (self.root).grow(X=self.train_X,y=self.train_y,pixels=self.pixels,bags=self.bags,retrain=retrain)
         else:
             print("Reading in tree:")
@@ -118,7 +116,7 @@ class Tree():
         node_list = (self.root).find_daughters()
 
         # uniform probability of retraining each node (currently at 40%)
-        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.60)]
+        retrain_nodes = [node for node in node_list if (np.random.uniform() >= 0.80)]
         ## DEBUG
         #print("retraining selection including daughters", len(retrain_nodes))
 
