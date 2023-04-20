@@ -3,6 +3,7 @@ import sklearn
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import time
 
 from tree import Tree
 from dataset import Dataset
@@ -21,7 +22,8 @@ class Forest():
         # save the dataset
         self.ds = dataset
         # create a randomized array of the indices of the training data
-        train_length = len(dataset.train_dataset["img"])
+        #train_length = len(dataset.train_dataset["img"])
+        train_length = len(dataset.train_X)
         indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
 
         for i in range(self.numTrees):
@@ -39,9 +41,11 @@ class Forest():
 
     def retrainTrees(self, full=False):
         # create a randomized array of the indices of the retraining data
-        train_length = len(self.ds.second_train["img"])
+        #train_length = len(self.ds.second_train["img"])
+        train_length = len(self.ds.second_train_X)
+
         indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
-        
+
         i = 0
         for tree in self.trees:
             if not full:
@@ -76,12 +80,18 @@ class Forest():
             for i in range(self.numTrees):
                 d_tmp = {k: d_tmp.get(k,0) + class_prob_arr[i][j].get(k,0) for k in set(d_tmp) | set(class_prob_arr[i][j])}
             class_probs.append(d_tmp)
-            
+
         return pred_class, class_probs
 
 def main(increment=False):
+    #What percentage of the available training dataset do you want to use for training? Enter [0,1]
+    train_percent = 1
+    #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
+    test_percent = 1
+
     # load dataset
-    dataset = Dataset()
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+
     ########### Create forest ############
     numTrees = 10
     forest = Forest(numTrees)
@@ -90,16 +100,22 @@ def main(increment=False):
     if increment:
         init_classes = 5
         dataset.split_data(init_classes)
-    
+
     ########### Grow trees on training data ###########
-    forest.createTrees(dataset,full=False)
+    tic = time.perf_counter()
+    forest.createTrees(dataset,full=True)
+    toc = time.perf_counter()
+    print(f"Tree trained (grown) in {toc - tic:0.4f} seconds")
 
     if increment:
         ########### Retrain trees on additional data ###########
+        tic = time.perf_counter()
         forest.retrainTrees(full=False)
+        toc = time.perf_counter()
+        print(f"Tree retrained in {toc - tic:0.4f} seconds")
 
     ########### Predict test data ##################
-    pred_class, class_probs_dicts = forest.classify(dataset.test_x, dataset.test_y) 
+    pred_class, class_probs_dicts = forest.classify(dataset.test_X, dataset.test_y)
 
     length = len(pred_class)
     # Determining by majority vote
@@ -116,7 +132,7 @@ def main(increment=False):
     max_prob = np.zeros(length)
     for i in range(length):
         max_prob[i] = max(class_probs_dicts[i], key=class_probs_dicts[i].get)
-    
+
     print(max_prob[0:100])
 
     num = sum([1 if dataset.test_y[i] == max_prob[i] else 0 for i in range(length)])

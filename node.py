@@ -17,6 +17,7 @@ class Node:
         self.class_prob = None
         self.classes_total = classes
         self.pixels = None
+        self.bags = None
         self.parent = parent
         self.branch = branch
         # centroid calculations
@@ -60,7 +61,7 @@ class Node:
                 result.append(el)
         return result
 
-    def grow(self,X,y,pixels,retrain,depth=0):
+    def grow(self,X,y,pixels,bags,retrain,depth=0):
         # number of samples
         num = len(y)
 
@@ -73,20 +74,23 @@ class Node:
             num_samples_per_class = np.sum(y == typ)
             class_probability = num_samples_per_class/num
             self.class_prob[typ] = class_probability
-        self.pred_class = max(self.class_prob, key=self.class_prob.get) 
+        self.pred_class = max(self.class_prob, key=self.class_prob.get)
         ####################### IN PROGRESS ###############
         '''
 
-        # find the class probabilites, set as node attributes 
+        # find the class probabilites, set as node attributes
         num_samples_per_class = np.array([np.sum(y == i) for i in self.classes_total])
         self.class_prob = num_samples_per_class/num
         # store the class probailities in a dictionary for greater felxibility
-        d = dict() 
+        d = dict()
+
+        #DEBUG
+        #print("classes total", self.classes_total)
         for typ in self.classes_total:
             d[typ] = self.class_prob[typ]
         self.class_prob = d
-        self.pred_class = max(self.class_prob, key=self.class_prob.get) 
-            
+        self.pred_class = max(self.class_prob, key=self.class_prob.get)
+
         ### DEBUG
         #print("for a node of depth", depth)
         #print("num of samples per class", num_samples_per_class)
@@ -94,6 +98,7 @@ class Node:
         #print("we predict class", self.pred_class)
         # Create a node, set attributes and find the splitting function
         self.pixels = pixels
+        self.bags = bags
         self.depth = depth
         self.retrain = retrain
 
@@ -106,7 +111,7 @@ class Node:
         y_sub = np.array([label for label in y if (label in self.classes_subset)])
         # call splitter
         self.splitter(X_sub, y_sub)
-        
+
 
         # From the splitting function & centroids assing the data to go to either the left or right right node
         indices_left = [False]*num
@@ -120,19 +125,19 @@ class Node:
             X_right, y_right = X[~indices_left], y[~indices_left]
             # Instantiate and Recursively call grow on the left and right daughters
             self.left = Node(self.classes_total, self, "left")
-            (self.left).grow(X_left, y_left, pixels, self.retrain, depth + 1)
+            (self.left).grow(X_left, y_left, pixels, bags, self.retrain, depth + 1)
 
             # call grow on the right daughter
             self.right = Node(self.classes_total, self, "right")
-            (self.right).grow(X_right, y_right, pixels, self.retrain, depth + 1)
+            (self.right).grow(X_right, y_right, pixels, bags, self.retrain, depth + 1)
 
             # which data the node was trained on (needed during retraining)
-            if not self.retrain: 
+            if not self.retrain:
                 # in this case we assign self.X and self.Y as a list of the daughters
                 self.X = list([(self.left).X,(self.right).X])
                 self.y = list([(self.left).y,(self.right).y])
         else:
-            if not self.retrain: 
+            if not self.retrain:
                 # in the leaf case we assign the actual data to self.X and self.y
                 # DEBUG
                 #print("shape of x:", X_sub.shape)
@@ -140,30 +145,32 @@ class Node:
                 self.X = X
                 self.y = y
 
-        return 
+        return
 
     def splitter(self,X,y):
         if (len(y) <= 5):
             self.cent_split = None
             ## DEBUG
             #print("Reached end condition. self.cent_split:",self.cent_split)
-            return 
-        
+            return
+
         num_parent = [np.sum(y == i) for i in self.classes_subset]
         best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
         ite = 0
 
         # Initialize and find the number of elements in each class
-        cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
+        #cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
+        cent = np.zeros((self.n_classes,self.bags))
         num_parent = [np.sum(y == i) for i in self.classes_subset]
 
         # Summing training data of respective centroid class
         for i in range(len(X)):
             cls_idx = index(self.classes_subset,y[i])[0]
             cent[cls_idx] += X[i]
-        # Calculate centroid 
+        # Calculate centroid
         self.centroids = np.array([cent[i]/num_parent[i] for i in range(len(self.classes_subset))])
         # Find distance to each centroid and find the closest one
+        #print(self.centroids[0])
         cent_distance = np.array([[np.linalg.norm(X[i] - self.centroids[k]) for k in range(self.n_classes)] for i in range(len(X))])
         nearest_cent_idx = np.argmin(cent_distance,axis=1)
         # DEBUG
@@ -176,7 +183,7 @@ class Node:
             num_right = num_parent.copy()
             tot_left = 0
             tot_right = len(y)
-            
+
             for j in range(len(X)):
 
                 cls_idx = index(self.classes_subset,y[j])[0]
@@ -197,9 +204,9 @@ class Node:
                 self.cent_split = centroids_split
                 # DEBUG
                 #print("cent_split in splitter:", centroids_split)
-        return 
+        return
 
-    
+
     # function to unpack nodes and store them in a list
     def find_daughters(self):
         node_list = [self]
@@ -208,7 +215,7 @@ class Node:
                 node_list.append(node.left)
             if node.right is not None:
                 node_list.append(node.right)
-        # remove first element, we only want the daughter nodes 
+        # remove first element, we only want the daughter nodes
         node_list = node_list[1:]
         return node_list
 
