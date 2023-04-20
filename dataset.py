@@ -1,11 +1,12 @@
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-import datasets
-from datasets import load_dataset, Image
 import cv2
-from scipy.cluster.vq import kmeans,vq
 import time
+import pickle
+import datasets
+import numpy as np
+import matplotlib.pyplot as plt
+from datasets import load_dataset, Image
+from scipy.cluster.vq import kmeans,vq
 # PREVIOUS DATASETS
 #"keremberke/pokemon-classification",
 #"Bingsu/Cat_and_Dog"
@@ -15,14 +16,17 @@ import time
 #"cifar10"
 
 class Dataset:
-    def __init__(self, train_pct, test_pct, pth = "frgfm/imagenette"):
+    def __init__(self, train_pct=1.0, test_pct=1.0, pth = "frgfm/imagenette", recalc=False, fourD=False):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
         self.image_name = 'image'
-        self.label_name = 'labels'
+        self.label_name = 'label'
+        self.fourD = fourD
         if pth == "imagenet-1k":
             self.pixels = 224
+            self.image_name = 'image'
+            self.label_name = 'label'
         elif pth == "cifar10":
             self.pixels = 64
             self.image_name = 'img'
@@ -37,42 +41,32 @@ class Dataset:
             self.label_name = 'label'
         self.bags = None
 
-        # special loading algorithim for imagenet due to size
         if pth == "imagenet-1k":
+            # due to imagenet's large size. We filter by label and then save to file
             # pick which labels we want to use
             labels = [6, 7, 107, 340, 406, 407, 420, 471, 755, 855]
             self.labels = labels
             self.download()
-
-            # ONCE DATASET HAS BEEN LOADED
-            #Loading our saved datasets from the disk
-            print("Dataset is downloaded. Loading from the disk...")
-            self.train_dataset = load_from_disk("../downloads/imagenet_train_data.hf")
-            self.test_dataset = load_from_disk("../downloads/imagenet_test_data.hf")
-
+        elif pth == "frgfm/imagenette":
+            self.ds = load_dataset(self.dataset_path,'320px')
         else:
-            # Load in all the data normally if not imagenet
-            if pth == "frgfm/imagenette":
-                self.ds = load_dataset(self.dataset_path,'320px')
-            else:
-                self.ds = load_dataset(self.dataset_path)
+        # Load in all the data normally if not imagenet
+            self.ds = load_dataset(self.dataset_path)
 
 
-            print("Loading datasets and converting images to bag of words features. This may take a while...")
-            ##### Take randomized subset of train and test dataset as specified by user ##########
-            train_ds_length = self.ds['train'].num_rows
-            test_ds_length = self.ds['validation'].num_rows
-            train_length = int(train_ds_length*train_pct)
-            test_length = int(test_ds_length*test_pct)
-            train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
-            test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
+        print("Loading datasets and converting images to bag of words features. This may take a while...")
+        ##### Take randomized subset of train and test dataset as specified by user ##########
+        train_ds_length = self.ds['train'].num_rows
+        test_ds_length = self.ds['validation'].num_rows
+        train_length = int(train_ds_length*train_pct)
+        test_length = int(test_ds_length*test_pct)
+        train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
+        test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
 
+        self.train_dataset = self.ds['train'][train_idx]
+        self.test_dataset = self.ds['validation'][test_idx]
 
-            self.train_dataset = self.ds['train'][train_idx]
-            self.test_dataset = self.ds['validation'][test_idx]
-
-            #print(self.train_dataset)
-            '''
+        if fourD:
             ########## DEPRECATED - BEFORE VISUAL BAG OF WORDS ################
             tic = time.perf_counter()
             self.train_img = [self.train_dataset[self.image_name][i].convert("RGB").resize((self.pixels,self.pixels)) for i in range(train_length)]
@@ -87,36 +81,39 @@ class Dataset:
             self.test_y = np.array([self.test_dataset[self.label_name][i] for i in range(test_length)])
             toc = time.perf_counter()
             print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
-
-            print(self.train_X.shape)
-            print(self.train_y.shape)
-            print(self.test_X.shape)
-            '''
+        else:
             ########## USING BAG OF WORDS #######################
-
-            #call function to return images as bag of visual words
-            print("Loading training dataset")
-            tic = time.perf_counter()
-            self.train_X, self.train_y = self.sift(self.train_dataset,Train=True)
-            toc = time.perf_counter()
-            print(f"Training dataset loaded and codebook generated in {toc - tic:0.4f} seconds")
-            print("Loading testing dataset")
-            tic = time.perf_counter()
-            self.test_X, self.test_y = self.sift(self.test_dataset)
-            toc = time.perf_counter()
-            print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
-            print("Finished loading datasets.")
-            
+            ## WARNING (currently only working for imagenette, should use generic path name in future
+            if not (os.path.isfile("./downloads/imagenette.npz")) or recalc:
+                #call function to return images as bag of visual words
+                print("Loading training dataset")
+                tic = time.perf_counter()
+                self.train_X, self.train_y = self.sift(self.train_dataset,Train=True)
+                toc = time.perf_counter()
+                print(f"Training dataset loaded and codebook generated in {toc - tic:0.4f} seconds")
+                print("Loading testing dataset")
+                tic = time.perf_counter()
+                self.test_X, self.test_y = self.sift(self.test_dataset)
+                toc = time.perf_counter()
+                print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
+                print("Finished loading datasets.")
+                # create a file to save the converted features in
+                outfile = "./downloads/imagenette.npz"
+                print("Saving bag of words")
+                # Save the codebook to a npzfile
+                np.savez(outfile, train_X=self.train_X,train_y=self.train_y,test_X=self.test_X,test_y=self.test_y,bags=self.bags)
+            else:
+                # load the features from file
+                print("Loading bag of words")
+                npzfile = np.load("./downloads/imagenette.npz")
+                self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
     def split_data(self,initial_num):
         # Split the labels in to the primary training set and the secondary training set
-
-
-
         #print(set(np.array(self.train_dataset['label'])))
         #total_labels = max(list(set(np.array(self.train_dataset['label']))))
         total_labels = max(list(set(np.array(self.train_dataset[self.label_name]))))
-        coarse_label
+        #coarse_label
         initial_labels = [i for i in range(initial_num)]
         second_labels = [(i+initial_num) for i in range(total_labels-initial_num+1)]
         # DEBUG
@@ -184,9 +181,12 @@ class Dataset:
         ######################### 5) Use k means to make codebook which converts image features to word features ######################
         # perform k-means clustering to build the codebook
 
+        
         self.bags = k = 100
         iters = 1
         cb, var = kmeans(all_descriptors, k, iters)
+
+
 
         return cb, var
 
@@ -231,13 +231,13 @@ class Dataset:
                 continue
             keypoints.append(img_keypoints)
             descriptors.append(img_descriptors)
-
             i += 1
 
         ################## If training dataset, generate codebook using kmeans ####################################
         if Train:
             print("Generating codebook")
             self.codebook, self.variance = self.generateCodebook(descriptors)
+
 
         ######################## 6) Convert all training image features to bag of visual words ######################
 
@@ -278,27 +278,36 @@ class Dataset:
 
     def download(self, reload=False):
         # We download, preprocess, and sort the imagenet data
-        if not (os.path.exists("./downloads/imagenet_test_data.hf") or reload):
+        if not (os.path.exists("./downloads/imagenet_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
-            #load in only 5 percent at a time
-            percent = 5
             self.ds = load_dataset(self.dataset_path)
-            train_data = self.ds['train']
-            val_data = self.ds['validation']
+            ########### DEPRECATED ########### 
+            #train_data = self.ds['train']
+            #val_data = self.ds['validation']
             # select those images which have a label in the label list
-            train_select = train_data.filter(lambda img: img['label'] in self.labels)
-            val_select = val_data.filter(lambda img: img['label'] in self.labels)
+            #train_select = train_data.filter(lambda img: img['label'] in self.labels)
+            #val_select = val_data.filter(lambda img: img['label'] in self.labels)
 
             # preprocess data
-            train_select = train_select.map(self.transforms, batched=True)
-            val_select = val_select.map(self.transforms, batched=True)
+            #train_select = train_select.map(self.transforms, batched=True)
+            #val_select = val_select.map(self.transforms, batched=True)
+            #train_select.save_to_disk("./downloads/imagenet_train_data.hf")
+            #val_select.save_to_disk("./downloads/imagenet_test_data.hf")
+            ########### DEPRECATED ########### 
+
+            # select those images which have a label in the label list
+            dataset_select = self.ds.filter(lambda img: img['label'] in self.labels)
+            # preprocess data
+            self.ds = dataset_select.map(self.transforms, batched=True)
 
             #Saving our dataset to disk after filtering for future use
             print("Saving the dataset to './downloads/'")
-            train_select.save_to_disk("./downloads/imagenet_train_data.hf")
-            val_select.save_to_disk("./downloads/imagenet_test_data.hf")
+            self.ds.save_to_disk("./downloads/imagenet_data.hf")
         else:
-            print("Dataset already downloaded!")
+            # ONCE DATASET HAS BEEN LOADED
+            #Load our saved datasets from the disk
+            print("Dataset is downloaded. Loading from the disk...")
+            self.ds = load_from_disk("./downloads/imagenet_data.hf")
         return
 
 
@@ -310,11 +319,13 @@ class Dataset:
 
 if __name__ == '__main__':
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
-    train_percent = 0.1
+    train_percent = 1.0
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
-    test_percent = 0.1
-
-    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    test_percent = 1.0
+    # recalc asks if you want to recalculate the codebook
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent, recalc=True)
+    # splitting the dataset
     init_classes = 5
     dataset.split_data(init_classes)
+    # if you want to downlaod the iamgenet-1k data
     #dataset.download()

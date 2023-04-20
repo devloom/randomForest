@@ -83,14 +83,14 @@ class Forest():
 
         return pred_class, class_probs
 
-def main(increment=False):
+def main(increment=True):
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
     train_percent = 1
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
     test_percent = 1
 
     # load dataset
-    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent,fourD=False)
 
     ########### Create forest ############
     numTrees = 10
@@ -103,7 +103,7 @@ def main(increment=False):
 
     ########### Grow trees on training data ###########
     tic = time.perf_counter()
-    forest.createTrees(dataset,full=True)
+    forest.createTrees(dataset,full=False)
     toc = time.perf_counter()
     print(f"Tree trained (grown) in {toc - tic:0.4f} seconds")
 

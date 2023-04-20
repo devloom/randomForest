@@ -17,9 +17,11 @@ class Node:
         self.class_prob = None
         self.classes_total = classes
         self.pixels = None
-        self.bags = None
         self.parent = parent
         self.branch = branch
+        # information about dataset
+        self.bags = None
+        self.fourD = False
         # centroid calculations
         self.classes_subset = None
         self.n_classes = None
@@ -125,10 +127,12 @@ class Node:
             X_right, y_right = X[~indices_left], y[~indices_left]
             # Instantiate and Recursively call grow on the left and right daughters
             self.left = Node(self.classes_total, self, "left")
+            self.left.fourD = self.fourD
             (self.left).grow(X_left, y_left, pixels, bags, self.retrain, depth + 1)
 
             # call grow on the right daughter
             self.right = Node(self.classes_total, self, "right")
+            self.right.fourD = self.fourD
             (self.right).grow(X_right, y_right, pixels, bags, self.retrain, depth + 1)
 
             # which data the node was trained on (needed during retraining)
@@ -139,9 +143,6 @@ class Node:
         else:
             if not self.retrain:
                 # in the leaf case we assign the actual data to self.X and self.y
-                # DEBUG
-                #print("shape of x:", X_sub.shape)
-                #print("shape of y:", y_sub.shape)
                 self.X = X
                 self.y = y
 
@@ -158,9 +159,14 @@ class Node:
         best_gini = 1.0 - sum((n / (len(y))) ** 2 for n in num_parent)
         ite = 0
 
-        # Initialize and find the number of elements in each class
-        #cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
-        cent = np.zeros((self.n_classes,self.bags))
+        # Initialize depending on the datastructure we are using. 4D arrays or bag of words
+        ## DEBUG
+        #print("4D according to node is:", self.fourD)
+        if self.fourD:
+            cent = np.zeros((self.n_classes,self.pixels,self.pixels,3))
+        else:
+            cent = np.zeros((self.n_classes,self.bags))
+
         num_parent = [np.sum(y == i) for i in self.classes_subset]
 
         # Summing training data of respective centroid class
