@@ -1,11 +1,12 @@
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-import datasets
-from datasets import load_dataset, Image
 import cv2
-from scipy.cluster.vq import kmeans,vq
 import time
+import pickle
+import datasets
+import numpy as np
+import matplotlib.pyplot as plt
+from datasets import load_dataset, Image
+from scipy.cluster.vq import kmeans,vq
 # PREVIOUS DATASETS
 #"keremberke/pokemon-classification",
 #"Bingsu/Cat_and_Dog"
@@ -15,7 +16,7 @@ import time
 #"cifar10"
 
 class Dataset:
-    def __init__(self, train_pct, test_pct, pth = "frgfm/imagenette"):
+    def __init__(self, train_pct, test_pct, pth = "frgfm/imagenette", recalc=False):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -23,6 +24,8 @@ class Dataset:
         self.label_name = 'labels'
         if pth == "imagenet-1k":
             self.pixels = 224
+            self.image_name = 'image'
+            self.label_name = 'label'
         elif pth == "cifar10":
             self.pixels = 64
             self.image_name = 'img'
@@ -47,14 +50,14 @@ class Dataset:
             # ONCE DATASET HAS BEEN LOADED
             #Loading our saved datasets from the disk
             print("Dataset is downloaded. Loading from the disk...")
-            self.train_dataset = load_from_disk("../downloads/imagenet_train_data.hf")
-            self.test_dataset = load_from_disk("../downloads/imagenet_test_data.hf")
+            self.train_dataset = load_from_disk("./downloads/imagenet_train_data.hf")
+            self.test_dataset = load_from_disk("./downloads/imagenet_test_data.hf")
 
         else:
-            # Load in all the data normally if not imagenet
             if pth == "frgfm/imagenette":
                 self.ds = load_dataset(self.dataset_path,'320px')
             else:
+            # Load in all the data normally if not imagenet
                 self.ds = load_dataset(self.dataset_path)
 
 
@@ -93,20 +96,29 @@ class Dataset:
             print(self.test_X.shape)
             '''
             ########## USING BAG OF WORDS #######################
-
-            #call function to return images as bag of visual words
-            print("Loading training dataset")
-            tic = time.perf_counter()
-            self.train_X, self.train_y = self.sift(self.train_dataset,Train=True)
-            toc = time.perf_counter()
-            print(f"Training dataset loaded and codebook generated in {toc - tic:0.4f} seconds")
-            print("Loading testing dataset")
-            tic = time.perf_counter()
-            self.test_X, self.test_y = self.sift(self.test_dataset)
-            toc = time.perf_counter()
-            print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
-            print("Finished loading datasets.")
-            
+            if not (os.path.isfile("./downloads/imagenette.npz")) or recalc:
+                #call function to return images as bag of visual words
+                print("Loading training dataset")
+                tic = time.perf_counter()
+                self.train_X, self.train_y = self.sift(self.train_dataset,Train=True)
+                toc = time.perf_counter()
+                print(f"Training dataset loaded and codebook generated in {toc - tic:0.4f} seconds")
+                print("Loading testing dataset")
+                tic = time.perf_counter()
+                self.test_X, self.test_y = self.sift(self.test_dataset)
+                toc = time.perf_counter()
+                print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
+                print("Finished loading datasets.")
+                # create a file to save the converted features in
+                outfile = "./downloads/imagenette.npz"
+                print("Saving bag of words")
+                # Save the codebook to a npzfile
+                np.savez(outfile, train_X=self.train_X,train_y=self.train_y,test_X=self.test_X,test_y=self.test_y,bags=self.bags)
+            else:
+                # load the features from file
+                print("Loading bag of words")
+                npzfile = np.load("./downloads/imagenette.npz")
+                self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
     def split_data(self,initial_num):
         # Split the labels in to the primary training set and the secondary training set
@@ -116,7 +128,7 @@ class Dataset:
         #print(set(np.array(self.train_dataset['label'])))
         #total_labels = max(list(set(np.array(self.train_dataset['label']))))
         total_labels = max(list(set(np.array(self.train_dataset[self.label_name]))))
-        coarse_label
+        #coarse_label
         initial_labels = [i for i in range(initial_num)]
         second_labels = [(i+initial_num) for i in range(total_labels-initial_num+1)]
         # DEBUG
@@ -184,9 +196,12 @@ class Dataset:
         ######################### 5) Use k means to make codebook which converts image features to word features ######################
         # perform k-means clustering to build the codebook
 
+        
         self.bags = k = 100
         iters = 1
         cb, var = kmeans(all_descriptors, k, iters)
+
+
 
         return cb, var
 
@@ -231,13 +246,13 @@ class Dataset:
                 continue
             keypoints.append(img_keypoints)
             descriptors.append(img_descriptors)
-
             i += 1
 
         ################## If training dataset, generate codebook using kmeans ####################################
         if Train:
             print("Generating codebook")
             self.codebook, self.variance = self.generateCodebook(descriptors)
+
 
         ######################## 6) Convert all training image features to bag of visual words ######################
 
@@ -310,11 +325,13 @@ class Dataset:
 
 if __name__ == '__main__':
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
-    train_percent = 0.1
+    train_percent = 1.0
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
-    test_percent = 0.1
-
-    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    test_percent = 1.0
+    # recalc asks if you want to recalculate the codebook
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent, recalc=True)
+    # splitting the dataset
     init_classes = 5
     dataset.split_data(init_classes)
+    # if you want to downlaod the iamgenet-1k data
     #dataset.download()
