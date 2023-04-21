@@ -22,7 +22,9 @@ class Dataset:
         self.pixels = 32  # determines image size
         self.image_name = 'image'
         self.label_name = 'label'
+        self.pth = pth
         self.fourD = fourD
+        self.recalc = recalc
         if pth == "imagenet-1k":
             self.pixels = 224
             self.image_name = 'image'
@@ -54,20 +56,18 @@ class Dataset:
         # Load in all the data normally if not imagenet
             self.ds = load_dataset(self.dataset_path)
 
-
-        print("Loading datasets and converting images to bag of words features. This may take a while...")
-        ##### Take randomized subset of train and test dataset as specified by user ##########
-        train_ds_length = self.ds['train'].num_rows
-        test_ds_length = self.ds['validation'].num_rows
-        train_length = int(train_ds_length*train_pct)
-        test_length = int(test_ds_length*test_pct)
-        train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
-        test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
-
-        self.train_dataset = self.ds['train'][train_idx]
-        self.test_dataset = self.ds['validation'][test_idx]
-
         if fourD:
+            print("Loading datasets and converting images to bag of words features. This may take a while...")
+            ##### Take randomized subset of train and test dataset as specified by user ##########
+            train_ds_length = self.ds['train'].num_rows
+            test_ds_length = self.ds['validation'].num_rows
+            train_length = int(train_ds_length*train_pct)
+            test_length = int(test_ds_length*test_pct)
+            train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
+            test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
+
+            self.train_dataset = self.ds['train'][train_idx]
+            self.test_dataset = self.ds['validation'][test_idx]
             ########## DEPRECATED - BEFORE VISUAL BAG OF WORDS ################
             tic = time.perf_counter()
             self.train_img = [self.train_dataset[self.image_name][i].convert("RGB").resize((self.pixels,self.pixels)) for i in range(train_length)]
@@ -85,6 +85,18 @@ class Dataset:
         else:
             ########## USING BAG OF WORDS #######################
             if not (os.path.isfile("./wordBags/"+pth+".npz")) or recalc:
+                print("Loading datasets and converting images to bag of words features. This may take a while...")
+                ##### Take randomized subset of train and test dataset as specified by user ##########
+                train_ds_length = self.ds['train'].num_rows
+                test_ds_length = self.ds['validation'].num_rows
+                train_length = int(train_ds_length*train_pct)
+                test_length = int(test_ds_length*test_pct)
+                train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
+                test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
+
+                self.train_dataset = self.ds['train'][train_idx]
+                self.test_dataset = self.ds['validation'][test_idx]
+
                 #call function to return images as bag of visual words
                 print("Loading training dataset")
                 tic = time.perf_counter()
@@ -112,17 +124,19 @@ class Dataset:
         # Split the labels in to the primary training set and the secondary training set
         #print(set(np.array(self.train_dataset['label'])))
         #total_labels = max(list(set(np.array(self.train_dataset['label']))))
-        total_labels = max(list(set(np.array(self.train_dataset[self.label_name]))))
-        #coarse_label
-        initial_labels = [i for i in range(initial_num)]
-        second_labels = [(i+initial_num) for i in range(total_labels-initial_num+1)]
+        total_labels = list(set(self.train_y))
+        total_labels.sort()
         # DEBUG
-        #print("initial_labels", initial_labels)
-        #print("second_labels", second_labels)
+        print("total_labels", total_labels)
+        #coarse_label
+        initial_labels = [total_labels[i] for i in range(initial_num)]
+        second_labels = [total_labels[i+initial_num] for i in range(len(total_labels)-initial_num)]
+        # DEBUG
+        print("initial_labels", initial_labels)
+        print("second_labels", second_labels)
 
         initial_idx = np.where(np.logical_and(self.train_y>=initial_labels[0], self.train_y<=initial_labels[-1]))[0].tolist()
         second_idx = np.where(np.logical_and(self.train_y>=second_labels[0], self.train_y<=second_labels[-1]))[0].tolist()
-
 
         self.second_train_X = self.train_X[second_idx]
         self.second_train_y = self.train_y[second_idx]
@@ -297,8 +311,11 @@ class Dataset:
         else:
             # ONCE DATASET HAS BEEN LOADED
             #Load our saved datasets from the disk
-            print("Dataset is downloaded. Loading from the disk...")
-            self.ds = load_from_disk("./downloads/imagenet_data.hf")
+            if not (os.path.isfile("./wordBags/"+self.pth+".npz")) or self.recalc:
+                print("Dataset is downloaded. Loading from the disk...")
+                self.ds = load_from_disk("./downloads/imagenet_data.hf")
+            else:
+                print("You already have the bag of words calculated, run dataset.py if you want to recalculate it")
         return
 
 

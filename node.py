@@ -88,8 +88,10 @@ class Node:
 
         #DEBUG
         #print("classes total", self.classes_total)
+        i = 0
         for typ in self.classes_total:
-            d[typ] = self.class_prob[typ]
+            d[typ] = self.class_prob[i]
+            i += 1
         self.class_prob = d
         self.pred_class = max(self.class_prob, key=self.class_prob.get)
 
