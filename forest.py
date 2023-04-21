@@ -43,6 +43,8 @@ class Forest():
         # create a randomized array of the indices of the retraining data
         #train_length = len(self.ds.second_train["img"])
         train_length = len(self.ds.second_train_X)
+        ## DEBUG
+        print("train_length is:", train_length)
 
         indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
 
@@ -51,6 +53,8 @@ class Forest():
             if not full:
                 # give the trees a subset of the training data
                 subset = train_length//self.numTrees
+                ## DEBUG
+                print("indices in forest are", indices)
                 indices_sub = np.array(indices[i*subset:i*subset+subset])
                 tree.retrain(indices_sub)
             else:

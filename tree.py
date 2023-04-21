@@ -101,6 +101,7 @@ class Tree():
         new_X = np.array([data.imgNumpy(image) for image in new_train_img])
         new_y = np.array(data.second_train['label'])[indices.astype(int)]
         '''
+        ## DEBUG
         new_X = data.second_train_X[indices]
         new_y = data.second_train_y[indices]
 

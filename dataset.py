@@ -125,16 +125,18 @@ class Dataset:
         #print(set(np.array(self.train_dataset['label'])))
         #total_labels = max(list(set(np.array(self.train_dataset['label']))))
         total_labels = list(set(self.train_y))
+        total_labels.sort()
+        # DEBUG
+        print("total_labels", total_labels)
         #coarse_label
         initial_labels = [total_labels[i] for i in range(initial_num)]
         second_labels = [total_labels[i+initial_num] for i in range(len(total_labels)-initial_num)]
         # DEBUG
-        #print("initial_labels", initial_labels)
-        #print("second_labels", second_labels)
+        print("initial_labels", initial_labels)
+        print("second_labels", second_labels)
 
         initial_idx = np.where(np.logical_and(self.train_y>=initial_labels[0], self.train_y<=initial_labels[-1]))[0].tolist()
         second_idx = np.where(np.logical_and(self.train_y>=second_labels[0], self.train_y<=second_labels[-1]))[0].tolist()
-
 
         self.second_train_X = self.train_X[second_idx]
         self.second_train_y = self.train_y[second_idx]
