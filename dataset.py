@@ -5,7 +5,7 @@ import pickle
 import datasets
 import numpy as np
 import matplotlib.pyplot as plt
-from datasets import load_dataset, Image
+from datasets import load_dataset, Image, load_from_disk
 from scipy.cluster.vq import kmeans,vq
 # PREVIOUS DATASETS
 #"keremberke/pokemon-classification",
@@ -16,7 +16,7 @@ from scipy.cluster.vq import kmeans,vq
 #"cifar10"
 
 class Dataset:
-    def __init__(self, train_pct=1.0, test_pct=1.0, pth = "frgfm/imagenette", recalc=False, fourD=False):
+    def __init__(self, train_pct=1.0, test_pct=1.0, pth = "imagenet-1k", recalc=False, fourD=False):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -44,7 +44,8 @@ class Dataset:
         if pth == "imagenet-1k":
             # due to imagenet's large size. We filter by label and then save to file
             # pick which labels we want to use
-            labels = [6, 7, 107, 340, 406, 407, 420, 471, 755, 855]
+            labels = [2,5,9,15,22,25,72,98,134,208,275,279,331,335,350,364,366,375,400,406,425,435,451,454,477,483,502,507,533,563,566,572,574,587,600,606,643,646,663,671,708,717,727,739,750,773,810,836,942,986]
+            print("You have selected", len(labels), "labels")
             self.labels = labels
             self.download()
         elif pth == "frgfm/imagenette":
@@ -83,8 +84,7 @@ class Dataset:
             print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
         else:
             ########## USING BAG OF WORDS #######################
-            ## WARNING (currently only working for imagenette, should use generic path name in future
-            if not (os.path.isfile("./downloads/imagenette.npz")) or recalc:
+            if not (os.path.isfile("./wordBags/"+pth+".npz")) or recalc:
                 #call function to return images as bag of visual words
                 print("Loading training dataset")
                 tic = time.perf_counter()
@@ -98,14 +98,14 @@ class Dataset:
                 print(f"Testing dataset loaded in {toc - tic:0.4f} seconds")
                 print("Finished loading datasets.")
                 # create a file to save the converted features in
-                outfile = "./downloads/imagenette.npz"
+                outfile = "./wordBags/"+pth+".npz"
                 print("Saving bag of words")
                 # Save the codebook to a npzfile
                 np.savez(outfile, train_X=self.train_X,train_y=self.train_y,test_X=self.test_X,test_y=self.test_y,bags=self.bags)
             else:
                 # load the features from file
                 print("Loading bag of words")
-                npzfile = np.load("./downloads/imagenette.npz")
+                npzfile = np.load("./wordBags/"+pth+".npz")
                 self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
     def split_data(self,initial_num):
@@ -280,21 +280,6 @@ class Dataset:
         # We download, preprocess, and sort the imagenet data
         if not (os.path.exists("./downloads/imagenet_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
-            self.ds = load_dataset(self.dataset_path)
-            ########### DEPRECATED ########### 
-            #train_data = self.ds['train']
-            #val_data = self.ds['validation']
-            # select those images which have a label in the label list
-            #train_select = train_data.filter(lambda img: img['label'] in self.labels)
-            #val_select = val_data.filter(lambda img: img['label'] in self.labels)
-
-            # preprocess data
-            #train_select = train_select.map(self.transforms, batched=True)
-            #val_select = val_select.map(self.transforms, batched=True)
-            #train_select.save_to_disk("./downloads/imagenet_train_data.hf")
-            #val_select.save_to_disk("./downloads/imagenet_test_data.hf")
-            ########### DEPRECATED ########### 
-
             # select those images which have a label in the label list
             dataset_select = self.ds.filter(lambda img: img['label'] in self.labels)
             # preprocess data
@@ -303,6 +288,12 @@ class Dataset:
             #Saving our dataset to disk after filtering for future use
             print("Saving the dataset to './downloads/'")
             self.ds.save_to_disk("./downloads/imagenet_data.hf")
+
+            #Overwrite the dataset_dict.json to exclude test data.
+            new_dataset_dict = {"splits": ["train", "validation"]}
+            json_object = json.dumps(new_dataset_dict, indent=4)
+            with open("./downloads/imagenet_data.hf/dataset_dict.json", "w") as outfile:
+                outfile.write(json_object)
         else:
             # ONCE DATASET HAS BEEN LOADED
             #Load our saved datasets from the disk
