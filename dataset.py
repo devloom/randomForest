@@ -22,7 +22,6 @@ class Dataset:
         self.pixels = 32  # determines image size
         self.image_name = 'image'
         self.label_name = 'label'
-        self.pth = pth
         self.fourD = fourD
         self.recalc = recalc
         if pth == "imagenet-1k":
@@ -126,6 +125,8 @@ class Dataset:
         #total_labels = max(list(set(np.array(self.train_dataset['label']))))
         total_labels = list(set(self.train_y))
         total_labels.sort()
+        #### WARNING: OVERWRITING INITIAL_NUM IN UNEXPECTED WAY
+        initial_num = len(total_labels)//2
         # DEBUG
         print("total_labels", total_labels)
         #coarse_label
@@ -196,7 +197,7 @@ class Dataset:
         # perform k-means clustering to build the codebook
 
         
-        self.bags = k = 100
+        self.bags = k = 1000
         iters = 1
         cb, var = kmeans(all_descriptors, k, iters)
 
@@ -294,6 +295,7 @@ class Dataset:
         # We download, preprocess, and sort the imagenet data
         if not (os.path.exists("./downloads/imagenet_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
+            self.ds = load_dataset(self.dataset_path)
             # select those images which have a label in the label list
             dataset_select = self.ds.filter(lambda img: img['label'] in self.labels)
             # preprocess data
@@ -311,7 +313,7 @@ class Dataset:
         else:
             # ONCE DATASET HAS BEEN LOADED
             #Load our saved datasets from the disk
-            if not (os.path.isfile("./wordBags/"+self.pth+".npz")) or self.recalc:
+            if not (os.path.isfile("./wordBags/"+self.dataset_path+".npz")) or self.recalc:
                 print("Dataset is downloaded. Loading from the disk...")
                 self.ds = load_from_disk("./downloads/imagenet_data.hf")
             else:

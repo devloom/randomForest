@@ -53,8 +53,6 @@ class Forest():
             if not full:
                 # give the trees a subset of the training data
                 subset = train_length//self.numTrees
-                ## DEBUG
-                print("indices in forest are", indices)
                 indices_sub = np.array(indices[i*subset:i*subset+subset])
                 tree.retrain(indices_sub)
             else:
@@ -87,7 +85,7 @@ class Forest():
 
         return pred_class, class_probs
 
-def main(increment=True):
+def main(increment=False):
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
     train_percent = 1
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
