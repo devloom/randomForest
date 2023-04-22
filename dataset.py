@@ -120,13 +120,23 @@ class Dataset:
                 npzfile = np.load("./wordBags/"+pth+".npz")
                 self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
-        '''
+        
         ### only take num_classes from train and test data
-        if (num_classes > 50 || num_classes < 2):
+        tot_classes = np.array(list(set(self.train_y)))
+        if (numclasses > 50 or numclasses < 2):
             print("Please select number of classes between 2 and 50. Setting to 50.")
-        elif(num_classes < 50):
-            class_labels = np.array(np.random.randint(0,train_length,num_classes).tolist())
-        '''    
+        elif(numclasses < 50):
+            #class_labels = np.array(np.random.randint(0,tot_classes,numclasses).tolist())
+            class_labels = np.random.choice(tot_classes,numclasses,replace=False)
+            print(tot_classes)
+            print(class_labels)                
+            train_idx = np.array([i for i in range(len(self.train_y)) if self.train_y[i] in class_labels])
+            self.train_X = self.train_X[train_idx]
+            self.train_y = self.train_y[train_idx]
+            test_idx = np.array([i for i in range(len(self.test_y)) if self.test_y[i] in class_labels])
+            self.test_X = self.test_X[test_idx]
+            self.test_y = self.test_y[test_idx]
+            #print(train_idx)
         
 
 
@@ -208,7 +218,7 @@ class Dataset:
         # perform k-means clustering to build the codebook
 
 
-        self.bags = k = 100
+        self.bags = k = 1000
         iters = 1
         cb, var = kmeans(all_descriptors, k, iters)
 
