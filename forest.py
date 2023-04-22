@@ -55,8 +55,6 @@ class Forest():
             if not full:
                 # give the trees a subset of the training data
                 subset = train_length//self.numTrees
-                ## DEBUG
-                print("indices in forest are", indices)
                 indices_sub = np.array(indices[i*subset:i*subset+subset])
                 tree.retrain(indices_sub)
             else:
