@@ -151,7 +151,7 @@ class Node:
         return
 
     def splitter(self,X,y):
-        if (len(y) <= 5):
+        if (len(y) <= 10):
             self.cent_split = None
             ## DEBUG
             #print("Reached end condition. self.cent_split:",self.cent_split)

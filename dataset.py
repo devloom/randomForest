@@ -16,7 +16,7 @@ from scipy.cluster.vq import kmeans,vq
 #"cifar10"
 
 class Dataset:
-    def __init__(self, train_pct=1.0, test_pct=1.0, pth = "imagenet-1k", recalc=False, fourD=False):
+    def __init__(self, train_pct=1.0, test_pct=1.0, numclasses = 50, pth = "imagenet-1k", recalc=False, fourD=False):
 
         self.dataset_path = pth
         self.pixels = 32  # determines image size
@@ -119,6 +119,18 @@ class Dataset:
                 npzfile = np.load("./wordBags/"+pth+".npz")
                 self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
+        '''
+        ### only take num_classes from train and test data
+        if (num_classes > 50 || num_classes < 2):
+            print("Please select number of classes between 2 and 50. Setting to 50.")
+        elif(num_classes < 50):
+            class_labels = np.array(np.random.randint(0,train_length,num_classes).tolist())
+        '''    
+        
+
+
+                
+
     def split_data(self,initial_num):
         # Split the labels in to the primary training set and the secondary training set
         #print(set(np.array(self.train_dataset['label'])))
@@ -195,6 +207,7 @@ class Dataset:
 
         ######################### 5) Use k means to make codebook which converts image features to word features ######################
         # perform k-means clustering to build the codebook
+
 
         
         self.bags = k = 1000
@@ -292,6 +305,7 @@ class Dataset:
         return np.divide(x_mean,len(self.test_X))
 
     def download(self, reload=False):
+        '''
         # We download, preprocess, and sort the imagenet data
         if not (os.path.exists("./downloads/imagenet_data.hf") or reload):
             print("Whoops! Looks like you don't have the imagenet dataset downloaded yet.")
@@ -311,6 +325,7 @@ class Dataset:
             with open("./downloads/imagenet_data.hf/dataset_dict.json", "w") as outfile:
                 outfile.write(json_object)
         else:
+
             # ONCE DATASET HAS BEEN LOADED
             #Load our saved datasets from the disk
             if not (os.path.isfile("./wordBags/"+self.dataset_path+".npz")) or self.recalc:
@@ -318,6 +333,7 @@ class Dataset:
                 self.ds = load_from_disk("./downloads/imagenet_data.hf")
             else:
                 print("You already have the bag of words calculated, run dataset.py if you want to recalculate it")
+
         return
 
 
