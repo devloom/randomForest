@@ -3,7 +3,7 @@ from dataset import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
-from tqdm import tqdm 
+from tqdm import tqdm
 import random
 
 
@@ -20,12 +20,12 @@ class Tree():
         self.max_depth = 25
         self.pixels = data.pixels
         self.bags = data.bags
-        ## DEPRECATED 
+        ## DEPRECATED
         # Index data should come from the split, and not passed as an initializing argument
         self.increment = 5000
         # for use in resizing
         self.data = data
-        
+
         if streaming:
             # Primarily for large datasets like ImageNet
             print("Starting the streaming algorithm")
@@ -38,11 +38,11 @@ class Tree():
                 print("Iteration",i)
 
             self.train_img = resized_img
-            #self.train_img = [elem["image"].convert("RGB").resize((data.pixels,data.pixels)) for elem in dataset_head] 
+            #self.train_img = [elem["image"].convert("RGB").resize((data.pixels,data.pixels)) for elem in dataset_head]
             print("Resizing done.")
             self.train_X = np.array([data.imgNumpy(image) for image in self.train_img])
             self.train_y = np.array(dataset_head['label'])
-        else:    
+        else:
             # Previous method of splitting up training data with no streamed data
             # Image resizing for training data occurs in tree
             ######DEPRECATED############
@@ -54,7 +54,7 @@ class Tree():
             self.train_X = data.train_X[indices]
             self.train_y = data.train_y[indices]
 
-        
+
         # for use in grow
         self.classes = np.array(list(set(self.train_y)))
         self.n_classes = len(self.classes)
@@ -71,20 +71,20 @@ class Tree():
         else:
             print("Reading in tree:")
             #### code here to read in node structure of tree
-    
+
     '''
     ## IN PROGRESS (Entropy function for splitting function, currently using gini scores)
     def entropy(self,p):
         #### this is informationgain function from lecture 21 slides on decision trees ########
         h = 0
         for i in range(p):
-            h += 
+            h +=
         h = -p*np.log2(p) - (1-p)*np.log2(1-p)
         return h
     '''
 
     def print_leaves(self,node):
-        if node.left == None:  
+        if node.left == None:
             print ("predicted class: ", node.pred_class)
         else:
             self.print_leaves(node.left)
@@ -128,14 +128,14 @@ class Tree():
         ## DEBUG
         #print("New length of retrain nodes is:", len(retrain_nodes))
 
-        # DEBUG    
+        # DEBUG
         i = 0
         for node in retrain_nodes:
             # DEBUG
             #print("Retrained node:", i)
             i += 1
 
-            # find all retrain data from the daughters 
+            # find all retrain data from the daughters
             node_daughters = node.find_daughters()
             raw_new_X = []
             raw_new_y = []
@@ -143,9 +143,12 @@ class Tree():
                 raw_new_X.append(daughter.retrain_X)
                 raw_new_y.append(daughter.retrain_y)
             # clean out empty lists from the retrain data
+            #print("raw ", np.asarray(raw_new_X).shape)
             new_X = [ele for ele in raw_new_X if ele != []]
             new_y = [ele for ele in raw_new_y if ele != []]
 
+
+            #print("new ", np.asarray(new_X).shape)
             # get the list of arrays on which node was trained initially
             list_X = node.get_X()
             list_y = node.get_y()
@@ -155,7 +158,7 @@ class Tree():
                 new_X.append(list_X)
                 new_y.append(list_y)
                 # Then we concatenate
-                comb_train_X = np.concatenate(new_X) 
+                comb_train_X = np.concatenate(new_X)
                 comb_train_y = np.concatenate(new_y)
             # if the node is not a leaf, we append the new training data to the list of arrays on which node was trained
             else:
@@ -165,7 +168,7 @@ class Tree():
                 # Then we concatenate
                 comb_train_X = np.concatenate(list_X)
                 comb_train_y = np.concatenate(list_y)
-                          
+
             # We reassign the retrained node to the position it occupied in its parent, and continue to grow the tree on the combined original and retraining data
             if node.branch == "left":
                 new_node = Node(self.classes, node.parent, "left")
@@ -200,7 +203,7 @@ class Tree():
             if testing:
                 pred_classes[i] = node_.pred_class
                 class_probs.append(node_.class_prob)
-        
+
         # return the predicted classes if we are testing
         if testing:
             # DEBUG
@@ -213,16 +216,18 @@ def main(increment=True):
     # Initialize dataset
 
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
-    train_percent = 0.1
+    train_percent = 1
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
-    test_percent = 0.1
+    test_percent = 1
 
-    dataset = Dataset(train_pct=train_percent,test_pct=test_percent)
+    num_classes = 10
+
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent,numclasses=num_classes,fourD=False)
     #dataset = Dataset()
 
     # arbitrary indices determine how large the training dataset is
     # DEPRECATED (The indices should be set by the training data, not via the instantiator)
-    
+
     #train_indices = np.array([i for i in range(0,25000,1)])
 
 
@@ -249,17 +254,8 @@ def main(increment=True):
         train_indices = sorted(np.array([i for i in range(train_length)]),key=lambda k:random.random())
         tree = Tree(dataset,train_indices)
         node_ = tree.root
-    
-    ########### accuracy on training data #################
-    pred_classes, class_probs = tree.sort(tree.train_X,testing=True)
 
-    print(tree.train_y[0:100])
-    print(pred_classes[0:100])
 
-    num = np.sum([1 if tree.train_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-    
-    print("Validation accuracy: ", num/len(pred_classes))
-    
     ########### accuracy on test data #################
     pred_classes, class_probs = tree.sort(dataset.test_X,testing=True)
 
@@ -267,11 +263,10 @@ def main(increment=True):
     print(pred_classes[0:100])
 
     num = np.sum([1 if dataset.test_y[i] == pred_classes[i] else 0 for i in range(len(pred_classes))])
-    
+
     print("Test accuracy: ", num/len(pred_classes))
-    
+
     return
 
 if __name__ == '__main__':
     main()
-

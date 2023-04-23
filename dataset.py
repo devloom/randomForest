@@ -22,24 +22,29 @@ class Dataset:
         self.pixels = 32  # determines image size
         self.image_name = 'image'
         self.label_name = 'label'
+        self.test_name = 'validation'
         self.fourD = fourD
         self.recalc = recalc
         if pth == "imagenet-1k":
             self.pixels = 224
             self.image_name = 'image'
             self.label_name = 'label'
+            self.test_name = 'validation'
         elif pth == "cifar10":
             self.pixels = 64
             self.image_name = 'img'
             self.label_name = 'label'
+            self.test_name = 'test'
         elif pth == "cifar100":
             self.pixels = 64
             self.image_name = 'img'
             self.label_name = 'fine_label'
+            self.test_name = 'test'
         elif pth == "frgfm/imagenette":
             self.pixels = 320
             self.image_name = 'image'
             self.label_name = 'label'
+            self.test_name = 'test'
         self.bags = None
 
         if pth == "imagenet-1k":
@@ -56,17 +61,17 @@ class Dataset:
             self.ds = load_dataset(self.dataset_path)
 
         if fourD:
-            print("Loading datasets and converting images to bag of words features. This may take a while...")
+            print("Loading datasets as converting images to 3D arrays. This may take a while...")
             ##### Take randomized subset of train and test dataset as specified by user ##########
             train_ds_length = self.ds['train'].num_rows
-            test_ds_length = self.ds['validation'].num_rows
+            test_ds_length = self.ds[self.test_name].num_rows
             train_length = int(train_ds_length*train_pct)
             test_length = int(test_ds_length*test_pct)
             train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
             test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
 
             self.train_dataset = self.ds['train'][train_idx]
-            self.test_dataset = self.ds['validation'][test_idx]
+            self.test_dataset = self.ds[self.test_name][test_idx]
             ########## DEPRECATED - BEFORE VISUAL BAG OF WORDS ################
             tic = time.perf_counter()
             self.train_img = [self.train_dataset[self.image_name][i].convert("RGB").resize((self.pixels,self.pixels)) for i in range(train_length)]
@@ -87,14 +92,14 @@ class Dataset:
                 print("Loading datasets and converting images to bag of words features. This may take a while...")
                 ##### Take randomized subset of train and test dataset as specified by user ##########
                 train_ds_length = self.ds['train'].num_rows
-                test_ds_length = self.ds['validation'].num_rows
+                test_ds_length = self.ds[self.test_name].num_rows
                 train_length = int(train_ds_length*train_pct)
                 test_length = int(test_ds_length*test_pct)
                 train_idx = np.random.randint(0, train_ds_length, train_length).tolist()
                 test_idx = np.random.randint(0, test_ds_length, test_length).tolist()
 
                 self.train_dataset = self.ds['train'][train_idx]
-                self.test_dataset = self.ds['validation'][test_idx]
+                self.test_dataset = self.ds[self.test_name][test_idx]
 
                 #call function to return images as bag of visual words
                 print("Loading training dataset")
@@ -119,7 +124,7 @@ class Dataset:
                 npzfile = np.load("./wordBags/"+pth+".npz")
                 self.train_X, self.train_y, self.test_X, self.test_y, self.bags = npzfile['train_X'], npzfile['train_y'], npzfile['test_X'], npzfile['test_y'], npzfile['bags']
 
-        
+
         ### only take num_classes from train and test data
         tot_classes = np.array(list(set(self.train_y)))
         if (numclasses > 50 or numclasses < 2):
@@ -128,18 +133,18 @@ class Dataset:
             #class_labels = np.array(np.random.randint(0,tot_classes,numclasses).tolist())
             class_labels = np.random.choice(tot_classes,numclasses,replace=False)
             print(tot_classes)
-            print(class_labels)                
+            print(class_labels)
             train_idx = np.array([i for i in range(len(self.train_y)) if self.train_y[i] in class_labels])
-            self.train_X = self.train_X[train_idx]
-            self.train_y = self.train_y[train_idx]
+            self.train_X = np.array(self.train_X[train_idx])
+            self.train_y = np.array(self.train_y[train_idx])
             test_idx = np.array([i for i in range(len(self.test_y)) if self.test_y[i] in class_labels])
-            self.test_X = self.test_X[test_idx]
-            self.test_y = self.test_y[test_idx]
+            self.test_X = np.array(self.test_X[test_idx])
+            self.test_y = np.array(self.test_y[test_idx])
             #print(train_idx)
-        
 
 
-                
+
+
 
     def split_data(self,initial_num):
         # Split the labels in to the primary training set and the secondary training set
@@ -148,7 +153,7 @@ class Dataset:
         total_labels = list(set(self.train_y))
         total_labels.sort()
         #### WARNING: OVERWRITING INITIAL_NUM IN UNEXPECTED WAY
-        initial_num = len(total_labels)//2
+        #initial_num = len(total_labels)//2
         # DEBUG
         print("total_labels", total_labels)
         #coarse_label
@@ -201,7 +206,7 @@ class Dataset:
             descriptors_sample.append(np.array(descriptors[n]))
 
         #print(descriptors_sample)
-        all_descriptors = []
+        all_des = []
         # extract image descriptor lists
         i = 0
         for img_descriptors in descriptors_sample:
@@ -210,9 +215,9 @@ class Dataset:
             i += 1
             # extract specific descriptors within the image
             for descriptor in img_descriptors:
-                all_descriptors.append(descriptor)
+                all_des.append(descriptor)
         # convert to single numpy array
-        all_descriptors = np.stack(all_descriptors)
+        all_des = np.stack(all_des)
 
 
         ######################### 5) Use k means to make codebook which converts image features to word features ######################
@@ -221,7 +226,7 @@ class Dataset:
 
         self.bags = k = 1000
         iters = 1
-        cb, var = kmeans(all_descriptors, k, iters)
+        cb, var = kmeans(all_des, k, iters)
 
 
 
@@ -231,21 +236,10 @@ class Dataset:
         #img = [np.array(data['img'][i], dtype=float) for i in range(len(data['img']))]
         img = [np.array(data[self.image_name][i].convert("RGB").resize((self.pixels,self.pixels)), dtype=float) for i in range(len(data[self.image_name]))]
         ##################### 2) normalize numpy arrays and make 8 bit integer data type #####################
-        img = [cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX).astype('uint8') for image in img]
+        images = [cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX).astype('uint8') for image in img]
 
         y = [np.array(data[self.label_name][i], dtype=int) for i in range(len(data[self.image_name]))]
 
-        bw_images = img
-        '''
-        bw_images = []
-        for im in img:
-            # if RGB, transform into grayscale
-            if len(im.shape) == 3:
-                bw_images.append(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY))
-            else:
-                # if grayscale, do not transform
-                bw_images.append(im)
-        '''
 
 
         ################### 3) Use SIFT to extract features (keypoints, descriptors) ########################
@@ -257,7 +251,7 @@ class Dataset:
         descriptors = []
         i = 0
         print("Extracting features")
-        for img in bw_images:
+        for img in images:
             if i%1000 == 0:
                 print("Image", i)
             # extract keypoints and descriptors for each image
@@ -287,19 +281,19 @@ class Dataset:
 
         ####################### 7) Make sparse vectors out of visual words (so we have x number of features (x is
         #######################    length of training dataset) each of length k)
-        frequency_vectors = []
+        freq = []
         for img_visual_words in visual_words:
             # create a frequency vector for each image
-            img_frequency_vector = np.zeros(self.bags)
+            img_freq = np.zeros(self.bags)
             for word in img_visual_words:
-                img_frequency_vector[word] += 1
-            frequency_vectors.append(img_frequency_vector)
+                img_freq[word] += 1
+            freq.append(img_freq)
         # stack together in numpy array
-        frequency_vectors = np.stack(frequency_vectors)
+        freq = np.stack(freq)
 
-        df = np.sum(frequency_vectors > 0, axis=0)
-        idf = np.log(len(frequency_vectors)/ df)
-        tfidf = frequency_vectors * idf
+        df = np.sum(freq > 0, axis=0)
+        idf = np.log(len(freq)/ df)
+        tfidf = freq * idf
 
         X = np.array(tfidf)
         y = np.array(y)

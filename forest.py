@@ -29,10 +29,13 @@ class Forest():
         for i in range(self.numTrees):
             if not full:
                 # give the trees a subset of the training data
-                #subset = train_length//self.numTrees
+
                 subset = train_length//5
-                #indices_sub = np.array(indices[i*subset:i*subset+subset])
                 indices_sub = np.array(np.random.randint(0,train_length,subset).tolist())
+
+                #subset = train_length//self.numTrees
+                #indices_sub = np.array(indices[i*subset:i*subset+subset])
+
                 tree = Tree(dataset,indices_sub)
             else:
                 # tree each tree on the whole dataset
@@ -54,10 +57,13 @@ class Forest():
         for tree in self.trees:
             if not full:
                 # give the trees a subset of the training data
-                subset = train_length//self.numTrees
+                #subset = train_length//self.numTrees
                 ## DEBUG
                 #print("indices in forest are", indices)
-                indices_sub = np.array(indices[i*subset:i*subset+subset])
+                #indices_sub = np.array(indices[i*subset:i*subset+subset])
+
+                subset = train_length//5
+                indices_sub = np.array(np.random.randint(0,train_length,subset).tolist())
                 tree.retrain(indices_sub)
             else:
                 # tree each tree on the whole dataset
@@ -89,17 +95,17 @@ class Forest():
 
         return pred_class, class_probs
 
-def main(increment=True):
+def main(increment=False):
     #What percentage of the available training dataset do you want to use for training? Enter [0,1]
     train_percent = 1
     #What percentage of the available testing dataset do you want to use for testing? Enter [0,1]
     test_percent = 1
 
     #How many classes from imagenet (up to 50)?
-    num_classes = 10
+    num_classes = 2
 
     # load dataset
-    dataset = Dataset(train_pct=train_percent,test_pct=test_percent,numclasses=num_classes,fourD=False)
+    dataset = Dataset(train_pct=train_percent,test_pct=test_percent,numclasses=num_classes,fourD=False,pth='cifar100')
 
     ########### Create forest ############
     numTrees = 50
@@ -107,7 +113,7 @@ def main(increment=True):
 
     # if we increment, split the data in the Dataset()
     if increment:
-        init_classes = 5
+        init_classes = 50
         dataset.split_data(init_classes)
 
     ########### Grow trees on training data ###########
